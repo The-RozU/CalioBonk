@@ -71,8 +71,9 @@ class Slime {
         emissive: '#225d32', emissiveIntensity: .38,
         roughness: .38, metalness: .03, flatShading: true,
       });
-      this.jelly = addPart(this.body, new THREE.SphereGeometry(.66,8,6), skin, 0, .71, 0) as typeof this.jelly;
-      this.jelly.scale.set(1.05, .72, 1.0);
+      const jelly = addPart(this.body, new THREE.SphereGeometry(.66,8,6), skin, 0, .71, 0) as THREE.Mesh<THREE.SphereGeometry, THREE.MeshStandardMaterial>;
+      this.jelly = jelly;
+      jelly.scale.set(1.05, .72, 1.0);
       const darker = new THREE.MeshStandardMaterial({color: '#306d49', roughness: .55, flatShading: true});
       const pale = new THREE.MeshStandardMaterial({color: '#e8e8b9', emissive: '#3b5340', roughness: .4});
       const pupil = new THREE.MeshStandardMaterial({color: '#101d19', roughness: .3});
