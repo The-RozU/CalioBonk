@@ -2,7 +2,7 @@
 
 Gra 3D w świecie Calionu, inspirowana roguelike survival games. Projekt odrębny od **Calion Survivors**.
 
-**Wersja:** 0.0.16  
+**Wersja:** 0.0.17  
 **Technologia:** Three.js + TypeScript + Vite  
 **Zakres:** eksploracja 3D z doskokiem, skaczącymi Slime'ami i automatyczną walką dystansową
 
@@ -32,7 +32,7 @@ npm run preview
 | Spacja | Skok |
 | Esc | Pauza i uwolnienie kursora |
 
-## Zakres v0.0.16
+## Zakres v0.0.17
 
 - Leśna mapa 3D z ruinami i punktem docelowym.
 - Model łucznika low-poly z łukiem, kołczanem i animacją naciągania; zachowano chód, skok i doskok.
@@ -82,7 +82,9 @@ Wykonać pomiary obu wariantów na tym samym urządzeniu przy kolejnych limitach
 
 Serwer synchronizuje pozycję i kierunek graczy oraz wspólną podstawową hordę Slime’ów (spawn, ruch, 36 HP, podstawowy atak łuku 18 obrażeń co 0,78 s, śmierć, licznik zabójstw), stan HP graczy i EXP drużyny (+5 na pokonanego Slime’a). Pokoje są prywatne (5-znakowy kod, do 4 osób). Gra Solo działa bez serwera.
 
-To PROTOTYP: obrażenia i nagrody są rozstrzygane przez serwer, ale w trybie online łuk strzela według uproszczonego bazowego tempa; specjalne ataki, poison, nowe buildy, hitboxy mapy i obrażenia wizualne nie są jeszcze zsynchronizowane. W online EXP trafia bezpośrednio do wszystkich obecnych graczy po zabójstwie, bez gwiazdek do zebrania. Nie traktuj tego jako ukończonego trybu kooperacji.
+**v0.0.17:** w online Slime’y pojawiają się falami: pierwsza fala 18 sztuk, następne co około 16 sekund (lub wcześniej, gdy poprzednia została wybita), kolejne fale rosną, do limitu 80 aktywnych wrogów. Serwer wysyła `waveStarted` i `arrowFired`. Obie przeglądarki animują widoczne strzały własnego oraz drugiego łucznika; serwer nalicza trafienia dopiero po czasie lotu strzały, a także synchronizuje obrażenia i śmierci Slime’ów. HUD wskazuje numer fali i liczbę wrogów.
+
+To nadal PROTOTYP: atak łuku w online używa podstawowego tempa i obrażeń, a specjalne ataki, poison, efekty buildów oraz serwerowe kolizje mapy nie są jeszcze zsynchronizowane. EXP trafia bezpośrednio do wszystkich uczestników po zabójstwie, bez gwiazdek na ziemi. Lokalna pauza Esc lub zmiana okna **nie pauzuje wspólnego pokoju**: bohater może dalej automatycznie strzelać i otrzymywać obrażenia. Na etapie ALFA nie ma ochrony przed obrażeniami podczas wyboru kart.
 
 Po zainstalowaniu zależności uruchom DWA terminale w katalogu repozytorium:
 
@@ -99,4 +101,6 @@ Serwer to mała usługa Node.js z biblioteką ws, obsługująca podstawowe wspó
 
 GitHub Pages nadal publikuje tylko klienta. Bez oddzielnego hostingu WSS multiplayer internetowy nie działa. Przed publiczną kooperacją należy rozszerzyć symulację o specjalne ataki i buildy, walidację ruchu, synchronizację EXP w postaci gwiazdek, poprawne kolizje mapy, ochronę przed oszustwami oraz ponowne połączenia.
 
-Test protokołu: npm run test:multiplayer
+Test fal i pocisków: npm run test:horde
+
+Test protokołu dwóch klientów: npm run test:multiplayer

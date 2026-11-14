@@ -50,6 +50,8 @@ const multiplayerRoom=document.querySelector<HTMLElement>('#mp-room')!;
 const multiplayerPlay=document.querySelector<HTMLButtonElement>('#mp-play')!;
 const multiplayerLeave=document.querySelector<HTMLButtonElement>('#mp-leave')!;
 const multiplayerIndicator=document.querySelector<HTMLElement>('#mp-indicator')!;
+const waveHud=document.querySelector<HTMLElement>('#wave-hud')!;
+const waveBanner=document.querySelector<HTMLElement>('#wave-banner')!;
 
 try {
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -67,17 +69,29 @@ try {
   const horde=new SlimeHorde(world);
   const multiplayer=new Multiplayer(world.scene);
   const sharedHorde=new SharedHorde(world.scene);
-  multiplayer.onEnemies=(enemies,kills)=>sharedHorde.sync(enemies,kills);
+  multiplayer.onEnemies=(enemies,kills,wave)=>sharedHorde.sync(enemies,kills,wave);
+  multiplayer.onArrow=(shot,local)=>{
+    sharedHorde.shoot(shot);
+    if(local)player.startAttack(new THREE.Vector3(shot.tx,0,shot.tz));
+  };
+  multiplayer.onEnemyHit=id=>sharedHorde.showHit(id);
+  multiplayer.onWave=(wave,spawned)=>{
+    waveBanner.textContent='FALA '+wave+' · +'+spawned+' SLIME’ÓW';
+    waveBanner.classList.add('visible');
+    waveBannerUntil=elapsed+3;
+  };
   multiplayer.onEnemyKilled=(exp)=>horde.grantSharedExperience(exp);
   multiplayer.onHealth=(hp)=>{player.health=hp;};
   const input=new Input(renderer.domElement);
   input.yaw=-.77;
   const camera=new CameraController(player,input,world);
   const clock=new THREE.Clock();
-  let elapsed=0,started=false,foundGate=false,notificationUntil=0,gameOverShown=false,lastLevel=1,levelNoticeUntil=0,choosingUpgrade=false;
+  let elapsed=0,started=false,foundGate=false,notificationUntil=0,gameOverShown=false,lastLevel=1,levelNoticeUntil=0,choosingUpgrade=false,waveBannerUntil=0;
   const debugEnabled=new URLSearchParams(location.search).get('debug')==='1';
   performanceOverlay.hidden=!debugEnabled;
-  hordeButtons.forEach(button=>button.addEventListener('click',()=>horde.setTestLimit(Number(button.dataset.hordeLimit),player.root.position)));
+  hordeButtons.forEach(button=>button.addEventListener('click',()=>{
+    if(!multiplayer.connected)horde.setTestLimit(Number(button.dataset.hordeLimit),player.root.position);
+  }));
   let fpsFrames=0,fpsElapsed=0,fpsValue=0;
   retryButton.addEventListener('click',()=>window.location.reload());
 const upgradeDefinitions:Array<{id:string,name:string,icon:string,desc:string,apply:(player:Player)=>void}>=[
@@ -146,7 +160,7 @@ upgradeCards.forEach(button=>button.addEventListener('click',()=>{
       document.body.classList.add('in-game');
       reticle.classList.add('active');
     }else{
-      multiplayer.setReady(false);
+      // Online rooms keep simulating when a browser tab loses focus. Escape is a local menu, not a global pause.
       if(!choosingUpgrade && !gameOverShown) showMenu(started);
     }
   };
@@ -164,6 +178,8 @@ upgradeCards.forEach(button=>button.addEventListener('click',()=>{
     multiplayerPlay.disabled=!multiplayer.connected;
     multiplayerLeave.hidden=!multiplayer.connected;
     multiplayerIndicator.hidden=!multiplayer.connected;
+    waveHud.hidden=!multiplayer.connected;
+    if(!multiplayer.connected)waveBanner.classList.remove('visible');
     if(!multiplayer.connected && !started)startLabel.textContent='ROZPOCZNIJ EKSPLORACJĘ';
   };
   multiplayer.onPresence=count=>{multiplayerIndicator.textContent='POKÓJ '+multiplayer.roomCode+' · '+count+'/4';};
@@ -202,6 +218,8 @@ upgradeCards.forEach(button=>button.addEventListener('click',()=>{
     distanceText.textContent=foundGate?'Lokacja odkryta · dalsza eksploracja':`${Math.round(distance)} m do celu`;
     slimeKills.textContent=String(multiplayer.connected?sharedHorde.kills:horde.kills);
     slimeAlive.textContent=String(multiplayer.connected?sharedHorde.alive:horde.alive);
+    if(multiplayer.connected){waveHud.hidden=false;waveHud.textContent=sharedHorde.wave?'FALA '+sharedHorde.wave+' · '+sharedHorde.alive+' WROGÓW':'FALA: OCZEKIWANIE';}
+    if(waveBannerUntil>0&&elapsed>waveBannerUntil){waveBanner.classList.remove('visible');waveBannerUntil=0;}
     levelText.textContent=`POZIOM ${horde.level}`;
     const attackNames=['🏹 Łuk',...(player.stats.tripleLevel?['➶ Potrójny']:[]),...(player.stats.poisonLevel?['☠ Trucizna']:[]),...(player.stats.pierceLevel?['↠ Przebicie']:[])];
     activeAttacks.textContent=attackNames.join('  ·  ');
@@ -228,7 +246,7 @@ upgradeCards.forEach(button=>button.addEventListener('click',()=>{
     elapsed+=dt;
     fpsFrames++;fpsElapsed+=rawDt;
     if(fpsElapsed>=.5){fpsValue=Math.round(fpsFrames/fpsElapsed);fpsFrames=0;fpsElapsed=0;}
-    if(debugEnabled) performanceText.textContent='FPS '+fpsValue+' · WROGOWIE '+horde.alive+' · POCISKI '+horde.projectileCount+' · EFEKTY '+horde.effectCount+' · EXP '+horde.crystalCount+' · MOB '+horde.renderMode+' · DRAW '+renderer.info.render.calls;
+    if(debugEnabled) performanceText.textContent='FPS '+fpsValue+' · WROGOWIE '+(multiplayer.connected?sharedHorde.alive:horde.alive)+' · POCISKI '+(multiplayer.connected?sharedHorde.projectileCount:horde.projectileCount)+' · EFEKTY '+horde.effectCount+' · EXP '+horde.crystalCount+' · MOB '+horde.renderMode+' · DRAW '+renderer.info.render.calls;
     world.update(elapsed);
     if(input.active){
       if(!player.defeated && !choosingUpgrade){

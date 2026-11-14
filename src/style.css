@@ -48,3 +48,10 @@
 .multiplayer-room{display:block;color:#d7bd83;font:700 12px Georgia,serif;letter-spacing:1px}
 .mp-indicator{font:700 10px system-ui;color:#aee3bc;border:1px solid #82bd9473;padding:9px;background:#092319bd}
 @media(max-width:700px){.multiplayer-panel{padding:10px}.multiplayer-panel>p{font-size:10px}.mp-indicator{font-size:8px}}
+
+/* Shared Slime waves: compact room counter and short announcement. */
+.wave-hud{padding:8px 11px;border:1px solid #c59c6388;background:#322417db;color:#f5dfb7;font:700 10px system-ui;letter-spacing:.8px;white-space:nowrap}
+.wave-hud[hidden]{display:none!important}
+.wave-banner{position:absolute;left:50%;top:22%;transform:translate(-50%,-9px);z-index:8;opacity:0;pointer-events:none;white-space:nowrap;padding:15px 27px;border:1px solid #cda86b;background:#101d17e8;color:#f5dba4;font:700 16px Georgia,serif;letter-spacing:1.6px;box-shadow:0 12px 35px #0008;transition:opacity .28s,transform .28s}
+.wave-banner.visible{opacity:1;transform:translate(-50%,0)}
+@media(max-width:700px){.wave-hud{font-size:8px;padding:6px}.wave-banner{top:25%;font-size:11px;padding:10px}}

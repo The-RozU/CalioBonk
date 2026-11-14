@@ -9,13 +9,13 @@ const required=[
   'index.html','src/main.ts','src/style.css','src/game/CameraController.ts',
   'src/game/Input.ts','src/game/Player.ts','src/game/Terrain.ts','src/game/World.ts',
   'src/game/Slimes.ts','src/network/Multiplayer.ts','src/network/SharedHorde.ts',
-  'server/index.mjs','server/test.mjs','server/horde.mjs',
+  'server/index.mjs','server/test.mjs','server/horde.mjs','server/horde.test.mjs',
   'public/assets/textures/ground.webp','public/assets/textures/stone.webp',
   'public/assets/textures/noise.webp','.github/workflows/pages.yml',
 ];
 for(const path of required) assert(existsSync(join(root,path)),`Brakuje pliku: ${path}`);
 const pkg=JSON.parse(read('package.json'));
-assert.equal(pkg.version,'0.0.16','Nieprawidłowa wersja gry');
+assert.equal(pkg.version,'0.0.17','Nieprawidłowa wersja gry');
 assert.match(read('src/game/Input.ts'),/requestPointerLock/);
 assert.match(read('src/game/Player.ts'),/ShiftLeft/);
 assert.match(read('src/game/Player.ts'),/dashCooldown/);
@@ -80,6 +80,10 @@ assert.match(read('src/main.ts'),/horde.update/);
 assert.match(read('src/main.ts'),/multiplayer.update/);
 assert.match(read('src/network/SharedHorde.ts'),/class SharedHorde/);
 assert.match(read('server/horde.mjs'),/enemyKilled/);
+assert.match(read('server/horde.mjs'),/waveStarted/);
+assert.match(read('server/horde.mjs'),/arrowFired/);
+assert.match(read('src/network/SharedHorde.ts'),/shoot\(data:SharedArrow\)/);
+assert.match(read('index.html'),/wave-hud/);
 assert.match(read('server/index.mjs'),/stepHorde/);
 assert.match(read('src/network/Multiplayer.ts'),/class Multiplayer/);
 assert.match(read('server/index.mjs'),/playerJoined/);

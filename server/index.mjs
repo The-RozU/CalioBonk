@@ -1,4 +1,4 @@
-// Server-authoritative basic Slime combat for cooperative alpha v0.0.16.
+// Server-owned grouped Slime waves and visible shots for cooperative alpha v0.0.17.
 import {createHorde,hordeSnapshot,stepHorde} from './horde.mjs';
 import {createServer} from 'node:http';
 import {randomBytes} from 'node:crypto';
@@ -45,7 +45,7 @@ wss.on('connection',ws=>{
     if(!msg||typeof msg!=='object')return;
     if(msg.type==='create'){
       if(sessions.has(ws))return send(ws,{type:'error',message:'Już jesteś w pokoju.'});
-      const room={code:makeCode(),players:new Map()};room.horde=createHorde(room);rooms.set(room.code,room);join(ws,room,msg.name);
+      const room={code:makeCode(),players:new Map()};room.horde=createHorde();rooms.set(room.code,room);join(ws,room,msg.name);
     }else if(msg.type==='join'){
       const code=String(msg.room||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5);
       join(ws,rooms.get(code),msg.name);

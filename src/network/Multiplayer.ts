@@ -1,14 +1,16 @@
 import * as THREE from 'three';
 
-import type {SharedEnemy} from './SharedHorde';
+import type {SharedEnemy,SharedArrow} from './SharedHorde';
 type PlayerState={id:string;name:string;x:number;y:number;z:number;yaw:number};
-type Remote={root:THREE.Group;target:THREE.Vector3;yaw:number};
+type Remote={root:THREE.Group;target:THREE.Vector3;yaw:number;arms:THREE.Mesh[];fireTime:number};
 type Packet=
   | {type:'joined';room:string;playerId:string;players:PlayerState[]}
   | {type:'playerJoined';player:PlayerState}
   | {type:'playerLeft';id:string}
   | {type:'move';id:string;x:number;y:number;z:number;yaw:number}
-  | {type:'enemies';enemies:SharedEnemy[];kills:number}
+  | {type:'enemies';enemies:SharedEnemy[];kills:number;wave:number}
+  | {type:'waveStarted';wave:number;spawned:number;alive:number}
+  | ({type:'arrowFired'}&SharedArrow)
   | {type:'enemyKilled';id:number;kills:number;x:number;z:number;exp:number}
   | {type:'playerHealth';id:string;hp:number}
   | {type:'playerDown';id:string}
@@ -37,6 +39,7 @@ function makeRemote(scene:THREE.Scene,player:PlayerState):Remote{
   const skin=new THREE.MeshStandardMaterial({color:'#c0aa92',roughness:1});
   const leather=new THREE.MeshStandardMaterial({color:'#3c3028',roughness:1});
   const wood=new THREE.MeshStandardMaterial({color:'#a28c5a',roughness:.75});
+  const arms:THREE.Mesh[]=[];
   const part=(geometry:THREE.BufferGeometry,material:THREE.Material,x:number,y:number,z:number)=>{
     const mesh=new THREE.Mesh(geometry,material);mesh.position.set(x,y,z);mesh.castShadow=true;root.add(mesh);return mesh;
   };
@@ -47,7 +50,7 @@ function makeRemote(scene:THREE.Scene,player:PlayerState):Remote{
   part(new THREE.ConeGeometry(.63,1.45,4,1,true),cloth,0,1.04,.21).rotation.y=Math.PI/4;
   for(const side of [-1,1]){
     part(new THREE.BoxGeometry(.27,.73,.29),leather,.22*side,.39,0);
-    part(new THREE.BoxGeometry(.25,.64,.34),armor,.48*side,1.35,-.02);
+    arms.push(part(new THREE.BoxGeometry(.25,.64,.34),armor,.48*side,1.35,-.02));
   }
   const curve=new THREE.CubicBezierCurve3(
     new THREE.Vector3(0,.55,0),new THREE.Vector3(.42,.48,0),
@@ -65,7 +68,7 @@ function makeRemote(scene:THREE.Scene,player:PlayerState):Remote{
   label.scale.set(2.3,.58,1);label.position.y=2.76;root.add(label);
   root.position.set(player.x,player.y,player.z);root.rotation.y=player.yaw;
   scene.add(root);
-  return {root,target:new THREE.Vector3(player.x,player.y,player.z),yaw:player.yaw};
+  return {root,target:new THREE.Vector3(player.x,player.y,player.z),yaw:player.yaw,arms,fireTime:0};
 }
 
 function disposeRemote(scene:THREE.Scene,remote:Remote):void{
@@ -92,7 +95,10 @@ export class Multiplayer{
   roomCode='';
   onStatus:(message:string)=>void=()=>{};
   onPresence:(players:number)=>void=()=>{};
-  onEnemies:(enemies:SharedEnemy[],kills:number)=>void=()=>{};
+  onEnemies:(enemies:SharedEnemy[],kills:number,wave:number)=>void=()=>{};
+  onWave:(wave:number,spawned:number)=>void=()=>{};
+  onArrow:(shot:SharedArrow,local:boolean)=>void=()=>{};
+  onEnemyHit:(id:number)=>void=()=>{};
   onEnemyKilled:(exp:number)=>void=()=>{};
   onHealth:(hp:number)=>void=()=>{};
   constructor(private readonly scene:THREE.Scene){}
@@ -114,7 +120,7 @@ export class Multiplayer{
   private clear():void{
     for(const remote of this.remotes.values())disposeRemote(this.scene,remote);
     this.remotes.clear();this.roomCode='';this.myId='';
-    this.onPresence(1);this.onEnemies([],0);
+    this.onPresence(1);this.onEnemies([],0,0);
   }
   setReady(ready:boolean):void{
     if(this.connected)this.socket?.send(JSON.stringify({type:'ready',ready}));
@@ -148,7 +154,12 @@ export class Multiplayer{
           this.onPresence(this.remotes.size+1);
           this.onStatus('Połączono! Kod pokoju: '+msg.room);
           end();
-        }else if(msg.type==='enemies')this.onEnemies(msg.enemies,msg.kills);
+        }else if(msg.type==='enemies')this.onEnemies(msg.enemies,msg.kills,msg.wave);
+        else if(msg.type==='waveStarted')this.onWave(msg.wave,msg.spawned);
+        else if(msg.type==='arrowFired'){
+          if(msg.by!==this.myId){const remote=this.remotes.get(msg.by);if(remote)remote.fireTime=.35;}
+          this.onArrow(msg,msg.by===this.myId);
+        }else if(msg.type==='enemyHit')this.onEnemyHit(msg.id);
         else if(msg.type==='enemyKilled')this.onEnemyKilled(msg.exp);
         else if(msg.type==='playerHealth'&&msg.id===this.myId)this.onHealth(msg.hp);
         else if(msg.type==='playerJoined')this.addPlayer(msg.player);
@@ -172,6 +183,9 @@ export class Multiplayer{
       remote.root.position.lerp(remote.target,Math.min(1,dt*15));
       const delta=Math.atan2(Math.sin(remote.yaw-remote.root.rotation.y),Math.cos(remote.yaw-remote.root.rotation.y));
       remote.root.rotation.y+=delta*Math.min(1,dt*14);
+      remote.fireTime=Math.max(0,remote.fireTime-dt);
+      if(remote.arms[0])remote.arms[0].rotation.x=remote.fireTime>0?.68:0;
+      if(remote.arms[1])remote.arms[1].rotation.x=remote.fireTime>0?.45:0;
     }
     if(!this.connected||!sendState)return;
     const dx=position.x-this.previous.x,dz=position.z-this.previous.z;

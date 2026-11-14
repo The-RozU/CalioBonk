@@ -51,14 +51,28 @@ try{
   // Both peers receive the same live enemy identities while playing.
   const enemiesOne=wait(one,'enemies');
   const enemiesTwo=wait(two,'enemies');
+  const announcementOne=wait(one,'waveStarted');
+  const announcementTwo=wait(two,'waveStarted');
+  const shotOne=wait(one,'arrowFired');
+  const shotTwo=wait(two,'arrowFired');
+  const hitOne=wait(one,'enemyHit');
+  const hitTwo=wait(two,'enemyHit');
   one.send(JSON.stringify({type:'ready',ready:true}));
   two.send(JSON.stringify({type:'ready',ready:true}));
-  const [waveA,waveB]=await Promise.all([enemiesOne,enemiesTwo]);
+  const [waveA,waveB,noticeA,noticeB,arrowA,arrowB,impactA,impactB]=await Promise.all([
+    enemiesOne,enemiesTwo,announcementOne,announcementTwo,shotOne,shotTwo,hitOne,hitTwo,
+  ]);
+  assert.equal(waveA.wave,1);
   assert.deepEqual(waveA.enemies.map(e=>e.id),waveB.enemies.map(e=>e.id));
-  assert.ok(waveA.enemies.length>=1);
+  assert.ok(waveA.enemies.length>=17,'initial wave is a whole group');
+  assert.deepEqual(noticeA,noticeB,'both players see the same wave');
+  assert.equal(noticeA.spawned,18);
+  assert.deepEqual(arrowA,arrowB,'both players see the same arrow event');
+  assert.equal(arrowA.targetId,impactA.id,'server hit follows the projectile');
+  assert.deepEqual(impactA,impactB,'same impact for both players');
   const leaving=wait(one,'playerLeft');two.close();
   assert.equal((await leaving).id,joinedTwo.playerId);
-  console.log('OK: join, room code, remote movement and disconnect');
+  console.log('OK: lobby, movement, shared Slime wave, arrows, impacts and disconnect');
 }finally{
   for(const ws of sockets)ws.terminate();
   processServer.kill('SIGTERM');
