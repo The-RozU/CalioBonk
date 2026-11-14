@@ -87,7 +87,7 @@ export class Player {
       new THREE.Vector3(.48,-.52,0),new THREE.Vector3(0,-.62,0),
     );
     mesh(new THREE.TubeGeometry(bowCurve,20,.045,5,false),woodBow,bow);
-    const stringLine=mesh(new THREE.CylinderGeometry(.012,.012,1.24,5),string,bow,0,0,-.015);
+    mesh(new THREE.CylinderGeometry(.012,.012,1.24,5),string,bow,0,0,-.015);
     const quiver=mesh(new THREE.CylinderGeometry(.13,.18,.72,7),leather,this.body,.3,1.12,.34);
     quiver.rotation.x=-.18; quiver.rotation.z=-.28;
     for(let i=0;i<3;i++){
