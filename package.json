@@ -1,16 +1,19 @@
 {
   "name": "caliobonk",
   "private": true,
-  "version": "0.0.14",
+  "version": "0.0.15",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build && node scripts/verify-dist.mjs",
     "preview": "vite preview --host 0.0.0.0",
-    "check:assets": "node scripts/check.mjs"
+    "check:assets": "node scripts/check.mjs",
+    "dev:server": "node server/index.mjs",
+    "test:multiplayer": "node server/test.mjs"
   },
   "dependencies": {
-    "three": "^0.180.0"
+    "three": "^0.180.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/three": "^0.180.0",

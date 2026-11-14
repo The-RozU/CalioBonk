@@ -2,7 +2,7 @@
 
 Gra 3D w świecie Calionu, inspirowana roguelike survival games. Projekt odrębny od **Calion Survivors**.
 
-**Wersja:** 0.0.14  
+**Wersja:** 0.0.15  
 **Technologia:** Three.js + TypeScript + Vite  
 **Zakres:** eksploracja 3D z doskokiem, skaczącymi Slime'ami i automatyczną walką dystansową
 
@@ -32,7 +32,7 @@ npm run preview
 | Spacja | Skok |
 | Esc | Pauza i uwolnienie kursora |
 
-## Zakres v0.0.14
+## Zakres v0.0.15
 
 - Leśna mapa 3D z ruinami i punktem docelowym.
 - Model łucznika low-poly z łukiem, kołczanem i animacją naciągania; zachowano chód, skok i doskok.
@@ -76,3 +76,25 @@ Plik `vite.config.ts` ustawia ścieżkę zasobów (`base: '/CalioBonk/'`), a `sc
 ## Dalsze prace
 
 Wykonać pomiary obu wariantów na tym samym urządzeniu przy kolejnych limitach hordy, a następnie dostroić renderowanie i gęstość przeciwników na podstawie odczytów FPS oraz wywołań rysowania.
+
+
+## Multiplayer ALFA: lokalny test dwóch graczy
+
+Prototyp synchronizuje pozycję i kierunek graczy, pojawianie się i znikanie awatarów oraz obsługuje prywatne pokoje z 5-znakowym kodem (do 4 osób). Slime’y, strzały, obrażenia, HP i EXP pozostają lokalne, NIE są jeszcze zsynchronizowane. Gra Solo działa bez serwera.
+
+Po zainstalowaniu zależności uruchom DWA terminale w katalogu repozytorium:
+
+Terminal 1:
+    npm install
+    npm run dev:server
+
+Terminal 2:
+    npm run dev
+
+Otwórz lokalny adres gry podany przez Vite w dwóch oknach przeglądarki, zwykle http://localhost:5173/CalioBonk/ . W obu kliknij GRA ZE ZNAJOMYMI · ALFA. W pierwszym utwórz pokój i skopiuj kod; w drugim dołącz tym kodem. Następnie w obu kliknij WEJDŹ DO WYPRAWY. W jednym momencie mysz może być przechwycona tylko przez jedno aktywne okno.
+
+Serwer to mała usługa Node.js z biblioteką ws, celowo ograniczona do lokalnego testu pozycji, a nie pełnej serwerowej symulacji walki. Domyślnie nasłuchuje na 127.0.0.1:2567; zmienne HOST i PORT pozwalają dostosować adres. Aby użyć innego serwera, skonfiguruj VITE_MULTIPLAYER_WS w pliku .env.local przed uruchomieniem Vite, np. VITE_MULTIPLAYER_WS=ws://127.0.0.1:2567 . NIE wystawiaj testowego serwera bezpośrednio do internetu.
+
+GitHub Pages nadal publikuje tylko klienta. Bez oddzielnego hostingu WSS multiplayer internetowy nie działa. Do przyszłej kooperacji trzeba przenieść wspólną symulację potworów, walki, EXP i HP na serwer, a także dodać ochronę i obsługę ponownych połączeń.
+
+Test protokołu: npm run test:multiplayer

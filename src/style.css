@@ -29,3 +29,22 @@
 .performance-overlay{position:absolute;left:16px;bottom:105px;z-index:9;padding:9px 12px;background:#08110ee8;border:1px solid #8fb99a66;color:#d4dfca;font:11px/1.6 ui-monospace,monospace;pointer-events:none}.performance-overlay[hidden]{display:none}.performance-overlay span{display:block;font-size:9px;letter-spacing:1px;color:#bca875}
 
 .performance-overlay{pointer-events:auto}.horde-controls{margin-top:4px;display:flex;align-items:center;gap:4px}.horde-controls button{padding:2px 5px;background:#20382b;border:1px solid #91ad8377;color:#e3e8cf;font:10px ui-monospace,monospace;cursor:pointer}.horde-controls button:hover{background:#33533b}
+
+/* Local multiplayer alpha */
+.menu-panel{max-height:calc(100vh - 62px);overflow-y:auto;scrollbar-width:thin}
+.multiplayer-toggle{display:block;width:min(380px,100%);margin:12px auto 0;padding:11px;border:1px solid #7c9b7b99;background:#172c22de;color:#d8e7d2;letter-spacing:1.4px;font-size:11px;cursor:pointer}
+.multiplayer-toggle:hover{background:#284737}
+.multiplayer-panel{margin:12px auto 0;padding:12px 15px;width:min(420px,100%);background:#0e201af0;border:1px solid #7594778c;text-align:left}
+.multiplayer-panel[hidden],#mp-leave[hidden],#mp-indicator[hidden]{display:none!important}
+.multiplayer-panel>p{font-size:11px;line-height:1.55;color:#b9cbb7;margin:2px 0 10px}
+.multiplayer-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.multiplayer-fields label{display:flex;flex-direction:column;gap:5px;font-size:9px;color:#c5b48e;letter-spacing:1px}
+.multiplayer-fields input{min-width:0;width:100%;padding:9px;background:#091811;border:1px solid #759c7e8c;color:#e1edda;font:12px system-ui}
+.multiplayer-actions{display:flex;gap:8px;margin-top:10px}
+.multiplayer-actions button{flex:1;padding:10px 8px;background:#294536;border:1px solid #82a68b95;color:#e2eedb;font-size:10px;letter-spacing:.65px;cursor:pointer}
+.multiplayer-actions button:hover:not(:disabled){background:#3d6149}
+.multiplayer-actions button:disabled{opacity:.45;cursor:default}
+.multiplayer-panel .multiplayer-status{margin-top:10px;color:#c6d1b0}
+.multiplayer-room{display:block;color:#d7bd83;font:700 12px Georgia,serif;letter-spacing:1px}
+.mp-indicator{font:700 10px system-ui;color:#aee3bc;border:1px solid #82bd9473;padding:9px;background:#092319bd}
+@media(max-width:700px){.multiplayer-panel{padding:10px}.multiplayer-panel>p{font-size:10px}.mp-indicator{font-size:8px}}

@@ -5,6 +5,7 @@ import { Input } from './game/Input';
 import { Player } from './game/Player';
 import { CameraController } from './game/CameraController';
 import { SlimeHorde } from './game/Slimes';
+import { Multiplayer } from './network/Multiplayer';
 
 const viewport=document.querySelector<HTMLDivElement>('#viewport')!;
 const menu=document.querySelector<HTMLDivElement>('#menu')!;
@@ -37,6 +38,17 @@ const activeAttacks=document.querySelector<HTMLElement>('#active-attacks')!;
 const performanceOverlay=document.querySelector<HTMLElement>('#performance-overlay')!;
 const performanceText=document.querySelector<HTMLElement>('#performance-values')!;
 const hordeButtons=[...document.querySelectorAll<HTMLButtonElement>('[data-horde-limit]')];
+const multiplayerToggle=document.querySelector<HTMLButtonElement>('#multiplayer-toggle')!;
+const multiplayerPanel=document.querySelector<HTMLElement>('#multiplayer-panel')!;
+const multiplayerName=document.querySelector<HTMLInputElement>('#mp-name')!;
+const multiplayerCode=document.querySelector<HTMLInputElement>('#mp-code')!;
+const multiplayerCreate=document.querySelector<HTMLButtonElement>('#mp-create')!;
+const multiplayerJoin=document.querySelector<HTMLButtonElement>('#mp-join')!;
+const multiplayerStatus=document.querySelector<HTMLElement>('#mp-status')!;
+const multiplayerRoom=document.querySelector<HTMLElement>('#mp-room')!;
+const multiplayerPlay=document.querySelector<HTMLButtonElement>('#mp-play')!;
+const multiplayerLeave=document.querySelector<HTMLButtonElement>('#mp-leave')!;
+const multiplayerIndicator=document.querySelector<HTMLElement>('#mp-indicator')!;
 
 try {
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -52,6 +64,7 @@ try {
   const world=new World();
   const player=new Player(world.scene);
   const horde=new SlimeHorde(world);
+  const multiplayer=new Multiplayer(world.scene);
   const input=new Input(renderer.domElement);
   input.yaw=-.77;
   const camera=new CameraController(player,input,world);
@@ -127,7 +140,7 @@ upgradeCards.forEach(button=>button.addEventListener('click',()=>{
       document.body.classList.add('in-game');
       reticle.classList.add('active');
     }else{
-      if(!choosingUpgrade) showMenu(started);
+      if(!choosingUpgrade && !gameOverShown) showMenu(started);
     }
   };
   const start=async():Promise<void>=>{
@@ -138,6 +151,35 @@ upgradeCards.forEach(button=>button.addEventListener('click',()=>{
       tip.textContent='Nie udało się przechwycić kursora. Kliknij ponownie lub sprawdź uprawnienia przeglądarki.';
     }
   };
+  multiplayer.onStatus=message=>{
+    multiplayerStatus.textContent=message;
+    multiplayerRoom.textContent=multiplayer.connected?'POKÓJ: '+multiplayer.roomCode:'';
+    multiplayerPlay.disabled=!multiplayer.connected;
+    multiplayerLeave.hidden=!multiplayer.connected;
+    multiplayerIndicator.hidden=!multiplayer.connected;
+    if(!multiplayer.connected && !started)startLabel.textContent='ROZPOCZNIJ EKSPLORACJĘ';
+  };
+  multiplayer.onPresence=count=>{multiplayerIndicator.textContent='POKÓJ '+multiplayer.roomCode+' · '+count+'/4';};
+  multiplayerToggle.addEventListener('click',()=>{multiplayerPanel.hidden=!multiplayerPanel.hidden;});
+  const connectRoom=async(action:'create'|'join'):Promise<void>=>{
+    multiplayerStatus.textContent='Łączenie z lokalnym serwerem...';
+    multiplayerCreate.disabled=true;multiplayerJoin.disabled=true;
+    try{
+      await multiplayer.connect(action,multiplayerName.value,multiplayerCode.value);
+      multiplayerCode.value=multiplayer.roomCode;
+      multiplayerStatus.textContent='Połączono! Podaj kod pokoju drugiemu graczowi.';
+      multiplayerRoom.textContent='POKÓJ: '+multiplayer.roomCode;
+      multiplayerPlay.disabled=false;multiplayerLeave.hidden=false;
+      multiplayerIndicator.hidden=false;
+      startLabel.textContent='WEJDŹ DO WSPÓLNEJ WYPRAWY';
+    }catch(error){multiplayerStatus.textContent=error instanceof Error?error.message:String(error);}
+    finally{multiplayerCreate.disabled=false;multiplayerJoin.disabled=false;}
+  };
+  multiplayerCreate.addEventListener('click',()=>{void connectRoom('create');});
+  multiplayerJoin.addEventListener('click',()=>{void connectRoom('join');});
+  multiplayerPlay.addEventListener('click',()=>{if(multiplayer.connected)void start();});
+  multiplayerLeave.addEventListener('click',()=>{multiplayer.leave();startLabel.textContent='ROZPOCZNIJ EKSPLORACJĘ';});
+  window.addEventListener('pagehide',()=>multiplayer.leave());
   startButton.addEventListener('click',()=>{void start();});
   renderer.domElement.addEventListener('click',()=>{if(started&&!input.active) void start();});
 
@@ -188,6 +230,7 @@ upgradeCards.forEach(button=>button.addEventListener('click',()=>{
         if(horde.pendingLevelUps>0) openUpgradeChoice();
       }
     }
+    multiplayer.update(dt,player.root.position,input.active&&!player.defeated&&!choosingUpgrade);
     camera.update(dt);
     updateHud();
     renderer.render(world.scene,camera.camera);

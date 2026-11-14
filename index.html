@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0b100e" />
     <meta name="description" content="CalioBonk. Prototyp mrocznej gry survival 3D w świecie Calionu." />
-    <title>CalioBonk | v0.0.14</title>
+    <title>CalioBonk | v0.0.15</title>
   </head>
   <body>
     <div id="app">
@@ -20,7 +20,8 @@
         </div>
         <div class="hud-right">
           <span class="stage-label"><span class="live-dot"></span> PROTOTYP 3D</span>
-          <span class="version">ALFA v0.0.14</span>
+          <span id="mp-indicator" class="mp-indicator" hidden>POKÓJ · 1/4</span>
+          <span class="version">ALFA v0.0.15</span>
         </div>
       </header>
 
@@ -63,11 +64,29 @@
       <div id="menu" class="menu-scrim" role="dialog" aria-modal="true" aria-labelledby="menu-title">
         <div class="menu-panel">
           <div class="crest" aria-hidden="true"><div class="crest-inner">C</div></div>
-          <p class="eyebrow">PIERWSZA WYPRAWA · PROTOTYP v0.0.14</p>
+          <p class="eyebrow">PIERWSZA WYPRAWA · PROTOTYP v0.0.15</p>
           <h1 id="menu-title">CALIO<span>BONK</span></h1>
           <div class="title-divider"><span></span>✦<span></span></div>
           <p id="menu-desc" class="menu-desc">Na krańcu Calionu stoją zapomniane ruiny. Pokonuj skaczące Slime’y automatycznymi strzałami i odkryj starą bramę.</p>
           <button id="start-button" class="start-button" type="button"><span id="start-label">ROZPOCZNIJ EKSPLORACJĘ</span><span aria-hidden="true">➜</span></button>
+          <button id="multiplayer-toggle" class="multiplayer-toggle" type="button">⚔ GRA ZE ZNAJOMYMI · ALFA</button>
+          <div id="multiplayer-panel" class="multiplayer-panel" hidden>
+            <p>Prototyp lokalny: gracze widzą nawzajem swoje postacie. Walka i EXP są jeszcze osobne.</p>
+            <div class="multiplayer-fields">
+              <label for="mp-name">NICK <input id="mp-name" type="text" maxlength="18" value="Odkrywca" autocomplete="off" /></label>
+              <label for="mp-code">KOD POKOJU <input id="mp-code" type="text" maxlength="5" placeholder="ABCDE" autocomplete="off" /></label>
+            </div>
+            <div class="multiplayer-actions">
+              <button id="mp-create" type="button">UTWÓRZ POKÓJ</button>
+              <button id="mp-join" type="button">DOŁĄCZ</button>
+            </div>
+            <p id="mp-status" class="multiplayer-status" aria-live="polite">Uruchom lokalny serwer: npm run dev:server.</p>
+            <strong id="mp-room" class="multiplayer-room"></strong>
+            <div class="multiplayer-actions">
+              <button id="mp-play" type="button" disabled>WEJDŹ DO WYPRAWY</button>
+              <button id="mp-leave" type="button" hidden>OPUŚĆ POKÓJ</button>
+            </div>
+          </div>
           <div class="menu-controls"><span>WASD · PORUSZANIE</span><i></i><span>MYSZ · KAMERA</span><i></i><span>SHIFT · DOSKOK</span><i></i><span>SPACJA · SKOK</span></div>
           <p class="menu-tip" id="menu-tip">Po rozpoczęciu kliknij Esc, aby zatrzymać grę i uwolnić kursor.</p>
         </div>
