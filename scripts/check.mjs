@@ -25,8 +25,10 @@ assert.match(read('src/game/CameraController.ts'),/this.camera.position.copy\(th
 assert.match(read('src/game/CameraController.ts'),/addEventListener\('wheel'/);
 assert.match(read('src/game/CameraController.ts'),/this.distance=THREE.MathUtils.clamp/);
 assert.match(read('src/game/CameraController.ts'),/3\.2,14/);
-assert.match(read('src/game/Player.ts'),/this.leftArm.rotation.x=\.28/);
-assert.match(read('src/game/Player.ts'),/this.rightArm.rotation.x=\.22-Math.sin\(progress\*Math.PI\)\*\.62/);
+assert.match(read('src/game/Player.ts'),/this.leftArm.rotation.x=\.28\+draw\*\.48/);
+assert.match(read('src/game/Player.ts'),/this.rightArm.rotation.z=-draw\*\.62/);
+assert.match(read('src/game/Player.ts'),/this.bow.rotation.y=draw\*\.24/);
+assert.match(read('src/game/Player.ts'),/Rounded hood cap/);
 assert.match(read('src/game/Player.ts'),/CubicBezierCurve3/);
 assert.match(read('src/game/Slimes.ts'),/aimPosition.clone\(\).sub\(origin\)/);
 assert.match(read('src/game/Slimes.ts'),/origin.distanceTo\(aimPosition\)/);
