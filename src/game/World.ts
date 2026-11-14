@@ -20,6 +20,8 @@ export class World {
   private readonly fireflies: THREE.Points;
   private readonly fireflyPositions: Float32Array;
   private readonly fireflyBases: Float32Array;
+  private collisionGrid:Map<string,Obstacle[]>|null=null;
+  private readonly collisionCell=8;
 
   constructor() {
     this.scene.background = new THREE.Color('#0b1719');
@@ -241,9 +243,12 @@ export class World {
 
   collides(x:number,z:number,radius=.39): boolean {
     if(!inWorld(x,z)) return true;
-    for(const o of this.obstacles){if(Math.hypot(x-o.x,z-o.z)<radius+o.radius) return true;}
+    if(!this.collisionGrid){this.collisionGrid=new Map();for(const obstacle of this.obstacles){const key=this.collisionKey(obstacle.x,obstacle.z),cell=this.collisionGrid.get(key)??[];cell.push(obstacle);this.collisionGrid.set(key,cell);}}
+    const cx=Math.floor(x/this.collisionCell),cz=Math.floor(z/this.collisionCell);
+    for(let gx=cx-1;gx<=cx+1;gx++)for(let gz=cz-1;gz<=cz+1;gz++)for(const o of this.collisionGrid.get(gx+','+gz)??[]){if(Math.hypot(x-o.x,z-o.z)<radius+o.radius)return true;}
     return false;
   }
+  private collisionKey(x:number,z:number):string{return Math.floor(x/this.collisionCell)+','+Math.floor(z/this.collisionCell);}
 
   update(elapsed?:number): void {
     const t=elapsed??this.clock.getElapsedTime();

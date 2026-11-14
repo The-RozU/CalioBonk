@@ -36,7 +36,7 @@ class Slime {
   readonly root = new THREE.Group();
   readonly shadow: THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>;
   private readonly body = new THREE.Group();
-  private readonly jelly: THREE.Mesh<THREE.SphereGeometry, THREE.MeshStandardMaterial>;
+  private readonly jelly: THREE.Mesh<THREE.SphereGeometry, THREE.MeshStandardMaterial> | null;
   private readonly billboard:THREE.Sprite;
   private readonly healthBar = new THREE.Group();
   private readonly healthFill: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
@@ -65,22 +65,25 @@ class Slime {
     this.root.position.set(x, groundHeight(x, z), z);
     this.root.add(this.body);
 
-    const skin = new THREE.MeshStandardMaterial({
-      color: variation > .6 ? '#5fbd70' : '#4e9c62',
-      emissive: '#225d32', emissiveIntensity: .38,
-      roughness: .38, metalness: .03, flatShading: true,
-    });
-    this.jelly = addPart(this.body, new THREE.SphereGeometry(.66,8,6), skin, 0, .71, 0) as typeof this.jelly;
-    this.jelly.scale.set(1.05, .72, 1.0);
-    const darker = new THREE.MeshStandardMaterial({color: '#306d49', roughness: .55, flatShading: true});
-    const pale = new THREE.MeshStandardMaterial({color: '#e8e8b9', emissive: '#3b5340', roughness: .4});
-    const pupil = new THREE.MeshStandardMaterial({color: '#101d19', roughness: .3});
-    for (const side of [-1, 1]) {
-      addPart(this.body, new THREE.IcosahedronGeometry(.15, 0), pale, side * .26, .94, -.58);
-      addPart(this.body, new THREE.SphereGeometry(.075, 6, 4), pupil, side * .26, .94, -.72);
-    }
-    const mouth = addPart(this.body, new THREE.BoxGeometry(.25, .055, .07), darker, 0, .67, -.67);
-    mouth.rotation.z = -.05;
+    if(SLIME_RENDER_MODE==='3d'){
+      const skin = new THREE.MeshStandardMaterial({
+        color: variation > .6 ? '#5fbd70' : '#4e9c62',
+        emissive: '#225d32', emissiveIntensity: .38,
+        roughness: .38, metalness: .03, flatShading: true,
+      });
+      this.jelly = addPart(this.body, new THREE.SphereGeometry(.66,8,6), skin, 0, .71, 0) as typeof this.jelly;
+      this.jelly.scale.set(1.05, .72, 1.0);
+      const darker = new THREE.MeshStandardMaterial({color: '#306d49', roughness: .55, flatShading: true});
+      const pale = new THREE.MeshStandardMaterial({color: '#e8e8b9', emissive: '#3b5340', roughness: .4});
+      const pupil = new THREE.MeshStandardMaterial({color: '#101d19', roughness: .3});
+      for (const side of [-1, 1]) {
+        addPart(this.body, new THREE.IcosahedronGeometry(.15, 0), pale, side * .26, .94, -.58);
+        addPart(this.body, new THREE.SphereGeometry(.075, 6, 4), pupil, side * .26, .94, -.72);
+      }
+      const mouth = addPart(this.body, new THREE.BoxGeometry(.25, .055, .07), darker, 0, .67, -.67);
+      mouth.rotation.z = -.05;
+    }else{this.jelly=null;}
+
 
     const barBack = new THREE.Mesh(
       new THREE.PlaneGeometry(.9, .13),
@@ -140,8 +143,7 @@ class Slime {
     }
 
     this.hitFlash = Math.max(0, this.hitFlash - dt);
-    this.jelly.material.emissiveIntensity = this.hitFlash > 0 ? 2.5 : this.poisonRemaining>0 ? .9 : .38;
-    this.jelly.material.emissive.set(this.poisonRemaining>0?'#34c96c':'#225d32');
+    if(this.jelly){this.jelly.material.emissiveIntensity = this.hitFlash > 0 ? 2.5 : this.poisonRemaining>0 ? .9 : .38;this.jelly.material.emissive.set(this.poisonRemaining>0?'#34c96c':'#225d32');}
     this.billboard.material.color.set(this.hitFlash>0?'#ffb18f':this.poisonRemaining>0?'#8cff91':'#ffffff');
     if(this.poisonRemaining>0){this.poisonRemaining=Math.max(0,this.poisonRemaining-dt);this.poisonTick-=dt;if(this.poisonTick<=0){this.health=Math.max(0,this.health-this.poisonDamage*.5);this.poisonTick=.5;if(this.health<=0)this.dead=true;}}
     this.jumpDelay -= dt;
@@ -219,6 +221,9 @@ export class SlimeHorde {
   private readonly enemies: Slime[] = [];
   private readonly effects: StrikeEffect[] = [];
   private readonly arrows: ArrowFlight[] = [];
+  private readonly arrowPool:THREE.Group[]=[];
+  private maxAlive=6;
+  private readonly maxDamageNumbers=24;
   private readonly experienceGems: ExperienceGem[] = [];
   experience = 0;
   level = 1;
@@ -241,6 +246,7 @@ export class SlimeHorde {
 
   get alive(): number { return this.enemies.filter(enemy => !enemy.dead).length; }
   get renderMode():SlimeRenderMode { return SLIME_RENDER_MODE; }
+  setTestLimit(limit:number,hero:THREE.Vector3):void { this.maxAlive=[25,50,100,200,300].includes(limit)?limit:6; while(this.alive<this.maxAlive){const before=this.enemies.length;this.spawn(hero);if(this.enemies.length===before)break;} }
   get projectileCount():number { return this.arrows.length; }
   get effectCount():number { return this.effects.length+this.damageNumbers.length; }
   get crystalCount():number { return this.experienceGems.length; }
@@ -268,6 +274,13 @@ export class SlimeHorde {
     }
   }
 
+  private acquireArrow(kind:AttackKind):THREE.Group {
+    const arrow=this.arrowPool.pop()??makeArrow(kind);arrow.userData.kind=kind;
+    const shaft=arrow.children[0];if(shaft instanceof THREE.Mesh && shaft.material instanceof THREE.MeshStandardMaterial)shaft.material.color.set(kind==='poison'?'#7de07c':kind==='piercing'?'#cad1dc':'#d8c28b');
+    return arrow;
+  }
+  private releaseArrow(mesh:THREE.Group):void {this.world.scene.remove(mesh);if(this.arrowPool.length<120)this.arrowPool.push(mesh);}
+
   private strikeEffect(enemy: Slime): void {
     const material = new THREE.MeshBasicMaterial({
       color: '#f0d49c', side: THREE.DoubleSide, transparent: true,
@@ -284,12 +297,15 @@ export class SlimeHorde {
   private registerKill(enemy:Slime):void { if(enemy.counted)return;enemy.counted=true;this.kills++;this.dropExperience(enemy); }
 
   private showDamage(enemy:Slime,amount:number,critical:boolean):void {
+    if(this.damageNumbers.length>=this.maxDamageNumbers){const oldest=this.damageNumbers.shift()!;this.world.scene.remove(oldest.sprite);oldest.sprite.material.map?.dispose();oldest.sprite.material.dispose();}
     const canvas=document.createElement('canvas');canvas.width=128;canvas.height=64;const ctx=canvas.getContext('2d');if(!ctx)return;
     ctx.font='bold 34px system-ui';ctx.textAlign='center';ctx.fillStyle=critical?'#ffe36e': '#f3e8d4';ctx.strokeStyle='#182019';ctx.lineWidth=5;ctx.strokeText(String(Math.round(amount)),64,44);ctx.fillText(String(Math.round(amount)),64,44);
     const texture=new THREE.CanvasTexture(canvas);const material=new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:false});const sprite=new THREE.Sprite(material);sprite.position.copy(enemy.position).add(new THREE.Vector3(0,1.8,0));sprite.scale.set(1.1,.55,1);this.world.scene.add(sprite);this.damageNumbers.push({sprite,age:0});
   }
 
   private dropExperience(enemy: Slime): void {
+    const close=this.experienceGems.find(item=>item.root.position.distanceTo(enemy.position)<1.5);
+    if(close){close.value+=5;close.root.scale.setScalar(Math.min(1.8,1+close.value*.025));return;}
     const root=new THREE.Group();
     const gem=new THREE.Mesh(new THREE.OctahedronGeometry(.22,0),new THREE.MeshStandardMaterial({color:'#8de1b1',emissive:'#2b9b66',emissiveIntensity:1.2,metalness:.35,roughness:.25}));
     gem.rotation.z=Math.PI/4;
@@ -341,7 +357,7 @@ export class SlimeHorde {
       const flight=this.arrows[i]!;
       flight.age+=dt;
       if(flight.target.dead || flight.age>2.5){
-        this.world.scene.remove(flight.mesh); flight.mesh.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});
+        this.releaseArrow(flight.mesh);
         this.arrows.splice(i,1); continue;
       }
       const origin=flight.mesh.position;
@@ -358,8 +374,7 @@ export class SlimeHorde {
         if(flight.kind==='poison')flight.target.applyPoison(5+flight.damage*2,3+flight.damage);
         if(flight.kind==='piercing'&&flight.pierce>0){flight.hit.add(flight.target);flight.pierce--;const next=this.enemies.filter(e=>!e.dead&&!flight.hit.has(e)).sort((a,b)=>a.position.distanceToSquared(origin)-b.position.distanceToSquared(origin))[0];if(next){flight.target=next;continue;}}
         this.strikeEffect(flight.target);
-        this.world.scene.remove(flight.mesh);
-        flight.mesh.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});
+        this.releaseArrow(flight.mesh);
         this.arrows.splice(i,1);
       }
     }
@@ -403,7 +418,7 @@ export class SlimeHorde {
       }
       if (closest && player.startAttack(closest.position)) {
         this.cooldown = .78/player.stats.attackSpeed;
-        const arrow=makeArrow('bow');
+        const arrow=this.acquireArrow('bow');
         arrow.position.copy(hero).add(new THREE.Vector3(0,1.25,0));
         const direction=closest.position.clone().add(new THREE.Vector3(0,.72,0)).sub(arrow.position).normalize();
         arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);
@@ -416,7 +431,7 @@ export class SlimeHorde {
     const fire=(kind:AttackKind,count=1,pierce=0):void=>{
       if(!target)return;
       for(let n=0;n<count;n++){
-        const arrow=makeArrow(kind);arrow.position.copy(hero).add(new THREE.Vector3((n-(count-1)/2)*.22,1.45,0));
+        const arrow=this.acquireArrow(kind);arrow.position.copy(hero).add(new THREE.Vector3((n-(count-1)/2)*.22,1.45,0));
         const direction=target.position.clone().add(new THREE.Vector3(0,.72,0)).sub(arrow.position).normalize();
         arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);this.world.scene.add(arrow);
         this.arrows.push({mesh:arrow,target,age:0,damage:player.stats.damage,criticalChance:player.stats.criticalChance,kind,pierce,hit:new Set()});
@@ -429,7 +444,7 @@ export class SlimeHorde {
     if(player.stats.poisonLevel>0&&this.poisonCooldown===0){fire('poison');this.poisonCooldown=Math.max(1.8,3.3-player.stats.poisonLevel*.18);}
     if(player.stats.pierceLevel>0&&this.pierceCooldown===0){fire('piercing',1,player.stats.pierceLevel);this.pierceCooldown=Math.max(1.5,2.6-player.stats.pierceLevel*.15);}
     this.spawnDelay -= dt;
-    if (this.spawnDelay <= 0 && this.alive < 6) {
+    if (this.spawnDelay <= 0 && this.alive < this.maxAlive) {
       this.spawn(hero);
       this.spawnDelay = 2.7;
     }

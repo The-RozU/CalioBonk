@@ -27,3 +27,5 @@
 .active-attacks{position:absolute;top:114px;left:50%;transform:translateX(-50%);z-index:5;padding:9px 13px;background:#101a16d9;border:1px solid #a98f5c70;color:#d9c89d;font-size:10px;letter-spacing:.7px;pointer-events:none;white-space:nowrap}@media(max-width:700px){.active-attacks{top:73px;left:auto;right:17px;transform:none;font-size:8px}}
 
 .performance-overlay{position:absolute;left:16px;bottom:105px;z-index:9;padding:9px 12px;background:#08110ee8;border:1px solid #8fb99a66;color:#d4dfca;font:11px/1.6 ui-monospace,monospace;pointer-events:none}.performance-overlay[hidden]{display:none}.performance-overlay span{display:block;font-size:9px;letter-spacing:1px;color:#bca875}
+
+.performance-overlay{pointer-events:auto}.horde-controls{margin-top:4px;display:flex;align-items:center;gap:4px}.horde-controls button{padding:2px 5px;background:#20382b;border:1px solid #91ad8377;color:#e3e8cf;font:10px ui-monospace,monospace;cursor:pointer}.horde-controls button:hover{background:#33533b}

@@ -36,6 +36,7 @@ const upgradeCards=[...document.querySelectorAll<HTMLButtonElement>('.upgrade-ca
 const activeAttacks=document.querySelector<HTMLElement>('#active-attacks')!;
 const performanceOverlay=document.querySelector<HTMLElement>('#performance-overlay')!;
 const performanceText=document.querySelector<HTMLElement>('#performance-values')!;
+const hordeButtons=[...document.querySelectorAll<HTMLButtonElement>('[data-horde-limit]')];
 
 try {
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -58,6 +59,7 @@ try {
   let elapsed=0,started=false,foundGate=false,notificationUntil=0,gameOverShown=false,lastLevel=1,levelNoticeUntil=0,choosingUpgrade=false;
   const debugEnabled=new URLSearchParams(location.search).get('debug')==='1';
   performanceOverlay.hidden=!debugEnabled;
+  hordeButtons.forEach(button=>button.addEventListener('click',()=>horde.setTestLimit(Number(button.dataset.hordeLimit),player.root.position)));
   let fpsFrames=0,fpsElapsed=0,fpsValue=0;
   retryButton.addEventListener('click',()=>window.location.reload());
 const upgradeDefinitions:Array<{id:string,name:string,icon:string,desc:string,apply:(player:Player)=>void}>=[
