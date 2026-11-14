@@ -6,6 +6,7 @@ import type { Player } from './Player';
 const MAX_HEALTH = 36;
 const ARROW_DAMAGE = 18;
 const CONTACT_DAMAGE = 12;
+type AttackKind='bow'|'triple'|'poison'|'piercing';
 
 function addPart(
   parent: THREE.Object3D,
@@ -35,6 +36,10 @@ class Slime {
   private readonly direction = new THREE.Vector2();
   private hitFlash = 0;
   private deathTime = 0;
+  private poisonRemaining=0;
+  private poisonTick=0;
+  private poisonDamage=0;
+  counted=false;
   dead = false;
   finished = false;
 
@@ -92,6 +97,8 @@ class Slime {
 
   get position(): THREE.Vector3 { return this.root.position; }
 
+  applyPoison(damagePerSecond:number,duration:number):void { this.poisonDamage=Math.max(this.poisonDamage,damagePerSecond);this.poisonRemaining=Math.max(this.poisonRemaining,duration);this.poisonTick=Math.min(this.poisonTick||.5,.5); }
+
   takeHit(damage: number): boolean {
     if (this.dead) return false;
     this.health = Math.max(0, this.health - damage);
@@ -118,7 +125,9 @@ class Slime {
     }
 
     this.hitFlash = Math.max(0, this.hitFlash - dt);
-    this.jelly.material.emissiveIntensity = this.hitFlash > 0 ? 2.5 : .38;
+    this.jelly.material.emissiveIntensity = this.hitFlash > 0 ? 2.5 : this.poisonRemaining>0 ? .9 : .38;
+    this.jelly.material.emissive.set(this.poisonRemaining>0?'#34c96c':'#225d32');
+    if(this.poisonRemaining>0){this.poisonRemaining=Math.max(0,this.poisonRemaining-dt);this.poisonTick-=dt;if(this.poisonTick<=0){this.health=Math.max(0,this.health-this.poisonDamage*.5);this.poisonTick=.5;if(this.health<=0)this.dead=true;}}
     this.jumpDelay -= dt;
     const dx = hero.x - this.root.position.x;
     const dz = hero.z - this.root.position.z;
@@ -177,11 +186,11 @@ class Slime {
 
 type StrikeEffect = { mesh: THREE.Mesh<THREE.TorusGeometry, THREE.MeshBasicMaterial>; age: number };
 type ExperienceGem = { root: THREE.Group; age: number; baseY: number; value: number };
-type ArrowFlight = { mesh: THREE.Group; target: Slime; age: number; damage:number; criticalChance:number };
+type ArrowFlight = { mesh: THREE.Group; target: Slime; age: number; damage:number; criticalChance:number; kind:AttackKind; pierce:number; hit:Set<Slime> };
 
-function makeArrow(): THREE.Group {
+function makeArrow(kind:AttackKind='bow'): THREE.Group {
   const arrow=new THREE.Group();
-  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.82,5),new THREE.MeshStandardMaterial({color:'#d8c28b',metalness:.35,roughness:.55}));
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.82,5),new THREE.MeshStandardMaterial({color:kind==='poison'?'#7de07c':kind==='piercing'?'#cad1dc':'#d8c28b',metalness:.35,roughness:.55}));
   shaft.rotation.x=-Math.PI/2; arrow.add(shaft);
   const tip=new THREE.Mesh(new THREE.ConeGeometry(.075,.22,5),new THREE.MeshStandardMaterial({color:'#bbc4b5',metalness:.7,roughness:.3}));
   tip.rotation.x=-Math.PI/2; tip.position.z=-.5; arrow.add(tip);
@@ -201,6 +210,10 @@ export class SlimeHorde {
   pendingLevelUps = 0;
   consumeLevelUp(): boolean { if(this.pendingLevelUps<=0)return false; this.pendingLevelUps--; return true; }
   private contactCooldown = 0;
+  private tripleCooldown=1.5;
+  private poisonCooldown=2.8;
+  private pierceCooldown=2.2;
+  private readonly damageNumbers: Array<{sprite:THREE.Sprite;age:number}> = [];
   private seed = 72819;
   private spawnDelay = 2.4;
   private cooldown = 0;
@@ -247,6 +260,14 @@ export class SlimeHorde {
     this.effects.push({mesh, age: 0});
   }
 
+  private registerKill(enemy:Slime):void { if(enemy.counted)return;enemy.counted=true;this.kills++;this.dropExperience(enemy); }
+
+  private showDamage(enemy:Slime,amount:number,critical:boolean):void {
+    const canvas=document.createElement('canvas');canvas.width=128;canvas.height=64;const ctx=canvas.getContext('2d');if(!ctx)return;
+    ctx.font='bold 34px system-ui';ctx.textAlign='center';ctx.fillStyle=critical?'#ffe36e': '#f3e8d4';ctx.strokeStyle='#182019';ctx.lineWidth=5;ctx.strokeText(String(Math.round(amount)),64,44);ctx.fillText(String(Math.round(amount)),64,44);
+    const texture=new THREE.CanvasTexture(canvas);const material=new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:false});const sprite=new THREE.Sprite(material);sprite.position.copy(enemy.position).add(new THREE.Vector3(0,1.8,0));sprite.scale.set(1.1,.55,1);this.world.scene.add(sprite);this.damageNumbers.push({sprite,age:0});
+  }
+
   private dropExperience(enemy: Slime): void {
     const root=new THREE.Group();
     const gem=new THREE.Mesh(new THREE.OctahedronGeometry(.22,0),new THREE.MeshStandardMaterial({color:'#8de1b1',emissive:'#2b9b66',emissiveIntensity:1.2,metalness:.35,roughness:.25}));
@@ -279,6 +300,7 @@ export class SlimeHorde {
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const enemy = this.enemies[i]!;
       enemy.update(dt, hero, this.world, camera);
+      if(enemy.dead&&!enemy.counted)this.registerKill(enemy);
       if (enemy.finished) this.enemies.splice(i, 1);
     }
     for (let i = this.effects.length - 1; i >= 0; i--) {
@@ -308,7 +330,12 @@ export class SlimeHorde {
       const step=22*dt;
       origin.addScaledVector(direction,step);
       if(origin.distanceTo(aimPosition)<step+.65){
-        if(flight.target.takeHit(ARROW_DAMAGE*flight.damage*(Math.random()<flight.criticalChance?2:1))){this.kills++;this.dropExperience(flight.target);}
+        const critical=Math.random()<flight.criticalChance;
+        const baseDamage=flight.kind==='triple'?10:flight.kind==='poison'?9:flight.kind==='piercing'?24:ARROW_DAMAGE;
+        const damage=baseDamage*flight.damage*(critical?2:1);
+        flight.target.takeHit(damage);this.showDamage(flight.target,damage,critical);
+        if(flight.kind==='poison')flight.target.applyPoison(5+flight.damage*2,3+flight.damage);
+        if(flight.kind==='piercing'&&flight.pierce>0){flight.hit.add(flight.target);flight.pierce--;const next=this.enemies.filter(e=>!e.dead&&!flight.hit.has(e)).sort((a,b)=>a.position.distanceToSquared(origin)-b.position.distanceToSquared(origin))[0];if(next){flight.target=next;continue;}}
         this.strikeEffect(flight.target);
         this.world.scene.remove(flight.mesh);
         flight.mesh.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});
@@ -338,6 +365,7 @@ export class SlimeHorde {
       }
     }
 
+    for(let i=this.damageNumbers.length-1;i>=0;i--){const item=this.damageNumbers[i]!;item.age+=dt;item.sprite.position.y+=dt*.8;item.sprite.material.opacity=Math.max(0,1-item.age/.7);if(item.age>.7){this.world.scene.remove(item.sprite);item.sprite.material.map?.dispose();item.sprite.material.dispose();this.damageNumbers.splice(i,1);}}
     this.cooldown = Math.max(0, this.cooldown - dt);
     if (this.cooldown <= 0) {
       let closest: Slime | undefined;
@@ -354,15 +382,31 @@ export class SlimeHorde {
       }
       if (closest && player.startAttack(closest.position)) {
         this.cooldown = .78/player.stats.attackSpeed;
-        const arrow=makeArrow();
+        const arrow=makeArrow('bow');
         arrow.position.copy(hero).add(new THREE.Vector3(0,1.45,0));
         const direction=closest.position.clone().add(new THREE.Vector3(0,.72,0)).sub(arrow.position).normalize();
         arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);
         this.world.scene.add(arrow);
-        this.arrows.push({mesh:arrow,target:closest,age:0,damage:player.stats.damage,criticalChance:player.stats.criticalChance});
+        this.arrows.push({mesh:arrow,target:closest,age:0,damage:player.stats.damage,criticalChance:player.stats.criticalChance,kind:'bow',pierce:0,hit:new Set()});
       }
     }
 
+    const target=this.enemies.filter(e=>!e.dead).sort((a,b)=>a.position.distanceToSquared(hero)-b.position.distanceToSquared(hero))[0];
+    const fire=(kind:AttackKind,count=1,pierce=0):void=>{
+      if(!target)return;
+      for(let n=0;n<count;n++){
+        const arrow=makeArrow(kind);arrow.position.copy(hero).add(new THREE.Vector3((n-(count-1)/2)*.22,1.45,0));
+        const direction=target.position.clone().add(new THREE.Vector3(0,.72,0)).sub(arrow.position).normalize();
+        arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);this.world.scene.add(arrow);
+        this.arrows.push({mesh:arrow,target,age:0,damage:player.stats.damage,criticalChance:player.stats.criticalChance,kind,pierce,hit:new Set()});
+      }
+    };
+    this.tripleCooldown=Math.max(0,this.tripleCooldown-dt);
+    this.poisonCooldown=Math.max(0,this.poisonCooldown-dt);
+    this.pierceCooldown=Math.max(0,this.pierceCooldown-dt);
+    if(player.stats.tripleLevel>0&&this.tripleCooldown===0){fire('triple',3);this.tripleCooldown=Math.max(1.1,2.2-player.stats.tripleLevel*.12);}
+    if(player.stats.poisonLevel>0&&this.poisonCooldown===0){fire('poison');this.poisonCooldown=Math.max(1.8,3.3-player.stats.poisonLevel*.18);}
+    if(player.stats.pierceLevel>0&&this.pierceCooldown===0){fire('piercing',1,player.stats.pierceLevel);this.pierceCooldown=Math.max(1.5,2.6-player.stats.pierceLevel*.15);}
     this.spawnDelay -= dt;
     if (this.spawnDelay <= 0 && this.alive < 6) {
       this.spawn(hero);

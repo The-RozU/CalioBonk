@@ -32,7 +32,7 @@ export class Player {
   private dashRemaining = 0;
   private readonly dashDuration = 0.23;
   health = 100;
-  readonly stats={damage:1,attackSpeed:1,moveSpeed:1,maxHealth:100,range:1,magnet:1,criticalChance:0,damageReduction:0};
+  readonly stats={damage:1,attackSpeed:1,moveSpeed:1,maxHealth:100,range:1,magnet:1,criticalChance:0,damageReduction:0,tripleLevel:0,poisonLevel:0,pierceLevel:0};
   private damageCooldown = 0;
   private hitFlash = 0;
   private attackTime = 0;

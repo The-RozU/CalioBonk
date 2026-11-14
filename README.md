@@ -2,7 +2,7 @@
 
 Gra 3D w świecie Calionu, inspirowana roguelike survival games. Projekt odrębny od **Calion Survivors**.
 
-**Wersja:** 0.0.9  
+**Wersja:** 0.0.10  
 **Technologia:** Three.js + TypeScript + Vite  
 **Zakres:** eksploracja 3D z doskokiem, skaczącymi Slime'ami i automatyczną walką dystansową
 
@@ -32,7 +32,7 @@ npm run preview
 | Spacja | Skok |
 | Esc | Pauza i uwolnienie kursora |
 
-## Zakres v0.0.9
+## Zakres v0.0.10
 
 - Leśna mapa 3D z ruinami i punktem docelowym.
 - Model łucznika low-poly z łukiem, kołczanem i animacją naciągania; zachowano chód, skok i doskok.
@@ -50,6 +50,8 @@ npm run preview
 - Awans zatrzymuje wyprawę i wyświetla trzy różne karty; wybór jednej wznawia grę, a kolejne awanse są kolejkowane.
 - Osiem pasywnych ulepszeń do maksymalnego poziomu 5 zwiększa obrażenia, szybkostrzelność, ruch, HP, zasięg, magnetyzm, krytyki lub odporność.
 - Podgląd buildu pokazuje zdobyte karty; wybór kart nie wywołuje menu pauzy.
+- Potrójny Strzał, Zatruta Strzała i Przebijająca Strzała są odblokowywane jako osobne ataki z własnymi cooldownami; maksymalnie aktywne są trzy ataki łącznie z łukiem.
+- Ulepszenia tych ataków zwiększają ich skuteczność; obrażenia krytyczne, liczby obrażeń i zielony efekt trucizny poprawiają czytelność walki.
 - Liczniki przeciwników i pokonanych Slime'ów; nowych wrogów pojawia się maksymalnie 6 naraz.
 - Zmiana nazwy projektu na **CalioBonk**, przygotowanie automatycznej publikacji na Pages z gałęzi `dev-mode`.
 

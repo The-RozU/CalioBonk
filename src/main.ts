@@ -33,6 +33,7 @@ const gameOver=document.querySelector<HTMLElement>('#game-over')!;
 const retryButton=document.querySelector<HTMLButtonElement>('#retry-button')!;
 const upgradeScreen=document.querySelector<HTMLElement>('#upgrade-screen')!;
 const upgradeCards=[...document.querySelectorAll<HTMLButtonElement>('.upgrade-card')];
+const activeAttacks=document.querySelector<HTMLElement>('#active-attacks')!;
 
 try {
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -62,13 +63,16 @@ const upgradeDefinitions:Array<{id:string,name:string,icon:string,desc:string,ap
   {id:'range',name:'Sokole Oko',icon:'◎',desc:'+15% zasięgu ataku',apply:p=>{p.stats.range+=.15;}},
   {id:'magnet',name:'Magnetyzm',icon:'✧',desc:'+25% promienia zbierania EXP',apply:p=>{p.stats.magnet+=.25;}},
   {id:'crit',name:'Szczęśliwy Traf',icon:'✦',desc:'+8% szansy na podwójne obrażenia',apply:p=>{p.stats.criticalChance+=.08;}},
-  {id:'resolve',name:'Hart Ducha',icon:'⬟',desc:'−10% otrzymywanych obrażeń',apply:p=>{p.stats.damageReduction=Math.min(.7,p.stats.damageReduction+.1);}}
+  {id:'resolve',name:'Hart Ducha',icon:'⬟',desc:'−10% otrzymywanych obrażeń',apply:p=>{p.stats.damageReduction=Math.min(.7,p.stats.damageReduction+.1);}},
+  {id:'attack-triple',name:'Potrójny Strzał',icon:'➶',desc:'Odblokuj trzy równoległe strzały z osobnym odnowieniem',apply:p=>{p.stats.tripleLevel++;}},
+  {id:'attack-poison',name:'Zatruta Strzała',icon:'☠',desc:'Strzała zatruwa cel przez kilka sekund',apply:p=>{p.stats.poisonLevel++;}},
+  {id:'attack-pierce',name:'Przebijająca Strzała',icon:'↠',desc:'Strzała przebija kolejnych przeciwników',apply:p=>{p.stats.pierceLevel++;}}
 ];
 const upgradeRanks:Record<string,number>={};
 function openUpgradeChoice():void{
   if(!horde.consumeLevelUp())return;
   choosingUpgrade=true;
-  const available=upgradeDefinitions.filter(card=>(upgradeRanks[card.id]??0)<5).sort(()=>Math.random()-.5).slice(0,3);
+  const available=upgradeDefinitions.filter(card=>(upgradeRanks[card.id]??0)<5 && (!card.id.startsWith('attack-') || (upgradeRanks[card.id]??0)>0 || player.stats.tripleLevel+player.stats.poisonLevel+player.stats.pierceLevel<2)).sort(()=>Math.random()-.5).slice(0,3);
   upgradeCards.forEach((button,index)=>{
     const card=available[index];
     button.hidden=!card;
@@ -143,6 +147,8 @@ upgradeCards.forEach(button=>button.addEventListener('click',()=>{
     slimeKills.textContent=String(horde.kills);
     slimeAlive.textContent=String(horde.alive);
     levelText.textContent=`POZIOM ${horde.level}`;
+    const attackNames=['🏹 Łuk',...(player.stats.tripleLevel?['➶ Potrójny']:[]),...(player.stats.poisonLevel?['☠ Trucizna']:[]),...(player.stats.pierceLevel?['↠ Przebicie']:[])];
+    activeAttacks.textContent=attackNames.join('  ·  ');
     expText.textContent=`${horde.experienceProgress} / ${horde.experienceRequired} EXP`;
     expFill.style.width=`${(horde.experienceProgress/horde.experienceRequired*100).toFixed(0)}%`;
     if(horde.level>lastLevel){lastLevel=horde.level;levelNoticeUntil=elapsed+2;levelUp.classList.add('visible');}
