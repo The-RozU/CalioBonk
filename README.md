@@ -2,7 +2,7 @@
 
 Gra 3D w świecie Calionu, inspirowana roguelike survival games. Projekt odrębny od **Calion Survivors**.
 
-**Wersja:** 0.0.19  
+**Wersja:** 0.0.20  
 **Technologia:** Three.js + TypeScript + Vite  
 **Zakres:** eksploracja 3D z doskokiem, skaczącymi Slime'ami i automatyczną walką dystansową
 
@@ -32,7 +32,7 @@ npm run preview
 | Spacja | Skok |
 | Esc | Pauza i uwolnienie kursora |
 
-## Zakres v0.0.19
+## Zakres v0.0.20
 
 - Leśna mapa 3D z ruinami i punktem docelowym.
 - Model łucznika low-poly z łukiem, kołczanem i animacją naciągania; zachowano chód, skok i doskok.
@@ -114,3 +114,21 @@ Dostosowanie v0.0.18: fale rozdzielane są między aktywnych graczy, a obrażeni
 Uruchom `npm run test:solo`, aby sprawdzić narastanie fal, limity aktywnych mobów, brak odpychania odległych Slime’ów i rozdzielenie 250 nałożonych sprite’ów. Mechanika jest dostępna w Solo bez uruchamiania serwera. Multiplayer ALFA pozostawiono bez zmian i nadal wymaga lokalnego serwera; osobne testy protokołu online to `npm run test:multiplayer` i `npm run test:horde`.
 
 Pierwsza fala: 7 Slime’ów, druga: 10, trzecia: 13. Fale nadchodzą co około 25 sekund czasu aktywnej rozgrywki; gdy wszystkie wcześniejsze potwory zginą, kolejna grupa pojawi się po krótkim odpoczynku. Licznik czasu nie nalicza pauzy ani wyboru ulepszenia. Panel `?debug=1` nadal pozwala testować 25–300 wrogów, bez wpływania na zwykły balans Solo.
+
+
+## v0.0.20: cztery odmiany Slime’ów w Solo
+
+Nowe typy wprowadzane stopniowo, bez zmiany zasad multiplayer ALFA:
+
+| Typ | Od fali | HP | Ruch | Obrażenia kontaktowe | EXP | Właściwość |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| Zielony | 1 | 36 | zwykły (3,0) | 12 | 5 | podstawowy przeciwnik |
+| Niebieski | 3 | 24 | szybki (4,8), zygzaki | 9 | 5 | częste skoki |
+| Czerwony | 5 | 96 | powolny (2,0), większy | 18 | 12 | wytrzymały i groźny przy kontakcie |
+| Toksyczny | 7 | 48 | umiarkowany (2,7) | 10 | 8 | po lądowaniu pozostawia kałuże trucizny |
+
+- Kolory sprite’ów uzyskiwane są proceduralnie z oryginalnej tekstury i współdzielone przez wszystkie Slime’y tego typu. Modele 3D również mają przypisane kolory. Nie trzeba pobierać dodatkowych obrazów.
+- Kałuże trucizny są widoczne na ziemi, trwają 4,2 s i zadają 7 obrażeń przy wejściu; można je przeskoczyć. Ich liczba jest ograniczona do 28, a zasoby wizualne są zwalniane po zniknięciu kałuży.
+- Nagrody EXP zależą od typu, także podczas scalania Gwiazd Esencji. Podczas fal 1–2 pojawiają się wyłącznie Zielone Slime’y.
+- W falach 3, 5 i 7 komunikat na ekranie sygnalizuje nowego przeciwnika. W walce Solo pozostają niezmienione bazowe ataki łucznika, stary multiplayer oraz miękka separacja Slime’ów.
+- Testy zasad i balansu typów: \`npm run test:variants\`. Testy działają również w GitHub Actions.

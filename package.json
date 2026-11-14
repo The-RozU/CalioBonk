@@ -1,7 +1,7 @@
 {
   "name": "caliobonk",
   "private": true,
-  "version": "0.0.19",
+  "version": "0.0.20",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -11,7 +11,8 @@
     "dev:server": "node server/index.mjs",
     "test:multiplayer": "node server/test.mjs",
     "test:horde": "node server/horde.test.mjs",
-    "test:solo": "node scripts/test-solo.mjs"
+    "test:solo": "node scripts/test-solo.mjs",
+    "test:variants": "node scripts/test-variants.mjs"
   },
   "dependencies": {
     "three": "^0.180.0",

@@ -8,14 +8,15 @@ const read=(name)=>readFileSync(join(root,name),'utf8');
 const required=[
   'index.html','src/main.ts','src/style.css','src/game/CameraController.ts',
   'src/game/Input.ts','src/game/Player.ts','src/game/Terrain.ts','src/game/World.ts',
-  'src/game/Slimes.ts','src/game/SoloSurvival.mjs','src/game/SoloSurvival.d.mts','src/network/Multiplayer.ts','src/network/SharedHorde.ts',
+  'src/game/Slimes.ts','src/game/SoloSurvival.mjs','src/game/SoloSurvival.d.mts',
+  'src/game/SlimeVariants.mjs','src/game/SlimeVariants.d.mts','scripts/test-variants.mjs','src/network/Multiplayer.ts','src/network/SharedHorde.ts',
   'server/index.mjs','server/test.mjs','server/horde.mjs','server/horde.test.mjs','scripts/test-solo.mjs',
   'public/assets/textures/ground.webp','public/assets/textures/stone.webp',
   'public/assets/textures/noise.webp','.github/workflows/pages.yml',
 ];
 for(const path of required) assert(existsSync(join(root,path)),`Brakuje pliku: ${path}`);
 const pkg=JSON.parse(read('package.json'));
-assert.equal(pkg.version,'0.0.19','Nieprawidłowa wersja gry');
+assert.equal(pkg.version,'0.0.20','Nieprawidłowa wersja gry');
 assert.match(read('src/game/Input.ts'),/requestPointerLock/);
 assert.match(read('src/game/Player.ts'),/ShiftLeft/);
 assert.match(read('src/game/Player.ts'),/dashCooldown/);
@@ -42,6 +43,10 @@ assert.match(read('src/game/Slimes.ts'),/CanvasTexture/);
 assert.match(read('src/game/Slimes.ts'),/setTestLimit/);
 assert.match(read('src/game/Slimes.ts'),/beginWave/);
 assert.match(read('src/game/Slimes.ts'),/separateSlimes/);
+assert.match(read('src/game/Slimes.ts'),/slimeVariantForWave/);
+assert.match(read('src/game/Slimes.ts'),/leaveToxicPool/);
+assert.match(read('src/game/Slimes.ts'),/updateToxicPools/);
+assert.match(read('src/game/SlimeVariants.mjs'),/SLIME_TRAITS/);
 assert.match(read('src/game/Slimes.ts'),/slimeSeparation/);
 assert.match(read('src/game/SoloSurvival.mjs'),/soloWaveSize/);
 assert.match(read('src/main.ts'),/horde\.runTime/);

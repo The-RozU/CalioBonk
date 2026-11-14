@@ -33,6 +33,8 @@ jobs:
         run: npm run check:assets
       - name: Test Solo waves and Slime separation
         run: npm run test:solo
+      - name: Test Slime variants and progression
+        run: npm run test:variants
       - name: Test horde waves and shots
         run: npm run test:horde
       - name: Test multiplayer protocol

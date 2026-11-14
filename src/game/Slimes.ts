@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { groundHeight } from './Terrain';
 import {SOLO_WAVE_INTERVAL,SOLO_CLEAR_DELAY,soloWaveSize,soloWaveCap,slimeSeparation} from './SoloSurvival.mjs';
+import {SLIME_TRAITS,TOXIC_POOL,slimeVariantForWave} from './SlimeVariants.mjs';
+import type {SlimeKind} from './SlimeVariants.mjs';
 import type { World } from './World';
 import type { Player } from './Player';
 
-const MAX_HEALTH = 36;
 const ARROW_DAMAGE = 18;
 const CONTACT_DAMAGE = 12;
 export type SlimeRenderMode='3d'|'sprite';
@@ -18,6 +19,37 @@ export const slimeSpriteTexture=(()=>{
   ctx.fillStyle='rgba(231,255,190,.55)';ctx.fillRect(37,43,12,4);ctx.fillRect(32,49,5,4);
   const texture=new THREE.CanvasTexture(canvas);texture.magFilter=THREE.NearestFilter;texture.minFilter=THREE.NearestFilter;texture.colorSpace=THREE.SRGBColorSpace;return texture;
 })();
+// Type-specific textures are generated once; each sprite still shares its variant texture.
+const slimeVariantTextures=new Map<SlimeKind,THREE.Texture>([['green',slimeSpriteTexture]]);
+function slimeTexture(kind:SlimeKind):THREE.Texture{
+  const cached=slimeVariantTextures.get(kind);
+  if(cached)return cached;
+  const tint:Record<'blue'|'red'|'toxic',[number,number,number]>={
+    blue:[79,173,242],red:[225,104,93],toxic:[168,114,230],
+  };
+  if(kind==='green')return slimeSpriteTexture;
+  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;
+  const context=canvas.getContext('2d')!;
+  context.drawImage(slimeSpriteTexture.image as HTMLCanvasElement,0,0);
+  const pixels=context.getImageData(0,0,128,128);
+  const color=tint[kind];
+  for(let i=0;i<pixels.data.length;i+=4){
+    if(pixels.data[i+3]===0)continue;
+    const r=pixels.data[i],g=pixels.data[i+1],b=pixels.data[i+2];
+    if(g>r*1.09&&g>b*1.06){
+      const strength=Math.min(1.55,Math.max(.17,(r*.3+g*.56+b*.14)/145));
+      pixels.data[i]=Math.min(255,color[0]*strength);
+      pixels.data[i+1]=Math.min(255,color[1]*strength);
+      pixels.data[i+2]=Math.min(255,color[2]*strength);
+    }
+  }
+  context.putImageData(pixels,0,0);
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.magFilter=THREE.NearestFilter;texture.minFilter=THREE.NearestFilter;
+  texture.colorSpace=THREE.SRGBColorSpace;
+  slimeVariantTextures.set(kind,texture);
+  return texture;
+}
 type AttackKind='bow'|'triple'|'poison'|'piercing';
 
 function addPart(
@@ -41,7 +73,8 @@ class Slime {
   private readonly billboard:THREE.Sprite;
   private readonly healthBar = new THREE.Group();
   private readonly healthFill: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
-  private health = MAX_HEALTH;
+  private health:number;
+  private toxinCooldown=0;
   private age = 0;
   private height = 0;
   private verticalSpeed = 0;
@@ -61,15 +94,19 @@ class Slime {
     x: number,
     z: number,
     private readonly variation: number,
+    readonly kind:SlimeKind='green',
+    private readonly onToxicLanding:((x:number,z:number)=>void)|null=null,
   ) {
-    this.root.name = 'Slime';
+    const traits=SLIME_TRAITS[kind];
+    this.health=traits.hp;
+    this.root.name=traits.name+' Slime';
     this.root.position.set(x, groundHeight(x, z), z);
     this.root.add(this.body);
 
     if(SLIME_RENDER_MODE==='3d'){
       const skin = new THREE.MeshStandardMaterial({
-        color: variation > .6 ? '#5fbd70' : '#4e9c62',
-        emissive: '#225d32', emissiveIntensity: .38,
+        color:traits.color,
+        emissive:traits.color,emissiveIntensity:.18,
         roughness: .38, metalness: .03, flatShading: true,
       });
       const jelly = addPart(this.body, new THREE.SphereGeometry(.66,8,6), skin, 0, .71, 0) as THREE.Mesh<THREE.SphereGeometry, THREE.MeshStandardMaterial>;
@@ -108,14 +145,16 @@ class Slime {
     );
     this.shadow.rotation.x = -Math.PI / 2;
     this.body.visible=SLIME_RENDER_MODE==='3d';
-    this.billboard=new THREE.Sprite(new THREE.SpriteMaterial({map:slimeSpriteTexture,transparent:true,depthWrite:false,alphaTest:.08}));
+    this.billboard=new THREE.Sprite(new THREE.SpriteMaterial({map:slimeTexture(kind),transparent:true,depthWrite:false,alphaTest:.08}));
     this.billboard.position.set(0,.49,0);this.billboard.scale.set(.92,.96,1);this.root.add(this.billboard);
     this.billboard.visible=SLIME_RENDER_MODE==='sprite';
     this.scene.add(this.root, this.shadow);
-    this.jumpDelay = .27 + variation * .65;
+    this.jumpDelay=(.27+variation*.65)*traits.jumpDelay;
   }
 
   get position(): THREE.Vector3 { return this.root.position; }
+  get expValue():number{return SLIME_TRAITS[this.kind].exp;}
+  get contactDamage():number{return SLIME_TRAITS[this.kind].contact;}
 
   applyPoison(damagePerSecond:number,duration:number):void { this.poisonDamage=Math.max(this.poisonDamage,damagePerSecond);this.poisonRemaining=Math.max(this.poisonRemaining,duration);this.poisonTick=Math.min(this.poisonTick||.5,.5); }
 
@@ -124,7 +163,7 @@ class Slime {
     this.health = Math.max(0, this.health - damage);
     this.hitFlash = .19;
     this.healthBar.visible = true;
-    const fraction = this.health / MAX_HEALTH;
+    const fraction=this.health/SLIME_TRAITS[this.kind].hp;
     this.healthFill.scale.x = fraction;
     this.healthFill.position.x = -(1 - fraction) * .41;
     if (this.health === 0) {
@@ -144,9 +183,13 @@ class Slime {
       return;
     }
 
-    this.hitFlash = Math.max(0, this.hitFlash - dt);
-    if(this.jelly){this.jelly.material.emissiveIntensity = this.hitFlash > 0 ? 2.5 : this.poisonRemaining>0 ? .9 : .38;this.jelly.material.emissive.set(this.poisonRemaining>0?'#34c96c':'#225d32');}
-    this.billboard.material.color.set(this.hitFlash>0?'#ffb18f':this.poisonRemaining>0?'#8cff91':'#ffffff');
+    this.hitFlash=Math.max(0,this.hitFlash-dt);
+    this.toxinCooldown=Math.max(0,this.toxinCooldown-dt);
+    if(this.jelly){
+      this.jelly.material.emissiveIntensity=this.hitFlash>0?1.2:this.poisonRemaining>0?.65:.18;
+      this.jelly.material.emissive.set(this.poisonRemaining>0?'#34c96c':SLIME_TRAITS[this.kind].color);
+    }
+    this.billboard.material.color.set(this.hitFlash>0?'#ffcfaa':this.poisonRemaining>0?'#baffbc':'#ffffff');
     if(this.poisonRemaining>0){this.poisonRemaining=Math.max(0,this.poisonRemaining-dt);this.poisonTick-=dt;if(this.poisonTick<=0){this.health=Math.max(0,this.health-this.poisonDamage*.5);this.poisonTick=.5;if(this.health<=0)this.dead=true;}}
     this.jumpDelay -= dt;
     const dx = hero.x - this.root.position.x;
@@ -155,16 +198,17 @@ class Slime {
     const chasing = distance > .95 && distance < 38;
 
     if (this.height <= 0 && this.verticalSpeed <= 0 && chasing && this.jumpDelay <= 0) {
-      this.verticalSpeed = 5.2;
+      this.verticalSpeed=SLIME_TRAITS[this.kind].jumpPower;
       this.direction.set(dx / distance, dz / distance);
       this.root.rotation.y = Math.atan2(-this.direction.x, -this.direction.y);
     }
 
     if (this.height > 0 || this.verticalSpeed > 0) {
       if (chasing) {
-        const speed = 3.0 + this.variation * .7;
-        const nextX = this.root.position.x + this.direction.x * speed * dt;
-        const nextZ = this.root.position.z + this.direction.y * speed * dt;
+        const speed=SLIME_TRAITS[this.kind].speed+this.variation*.45;
+        const sideways=this.kind==='blue'?Math.sin(this.age*9+this.variation*8)*.24:0;
+        const nextX=this.root.position.x+(this.direction.x-this.direction.y*sideways)*speed*dt;
+        const nextZ=this.root.position.z+(this.direction.y+this.direction.x*sideways)*speed*dt;
         if (!world.collides(nextX, this.root.position.z, .24)) this.root.position.x = nextX;
         if (!world.collides(this.root.position.x, nextZ, .24)) this.root.position.z = nextZ;
       }
@@ -173,7 +217,11 @@ class Slime {
       if (this.height <= 0) {
         this.height = 0;
         this.verticalSpeed = 0;
-        this.jumpDelay = .28 + this.variation * .3;
+        this.jumpDelay=(.28+this.variation*.3)*SLIME_TRAITS[this.kind].jumpDelay;
+        if(this.kind==='toxic'&&this.toxinCooldown<=0){
+          this.onToxicLanding?.(this.root.position.x,this.root.position.z);
+          this.toxinCooldown=TOXIC_POOL.cooldown;
+        }
       }
     }
 
@@ -182,7 +230,7 @@ class Slime {
     const rise = this.height > .01 ? Math.min(this.height / 1.0, 1) : 0;
     const squash = this.height < .01 ? Math.max(0, 1 - Math.max(this.jumpDelay, 0) * 2.5) : 0;
     this.body.scale.set(.52 * (1 + squash * .13 - rise * .13), .42 * (1 - squash * .16 + rise * .22), .52 * (1 + squash * .13 - rise * .13));
-    this.root.scale.setScalar(Math.min(1, this.age * 5));
+    this.root.scale.setScalar(Math.min(1,this.age*5)*SLIME_TRAITS[this.kind].scale);
     this.healthBar.quaternion.copy(this.root.quaternion).invert().multiply(camera.quaternion);
     this.shadow.position.set(this.root.position.x, ground + .025, this.root.position.z);
     this.shadow.scale.setScalar(1 + this.height * .16);
@@ -206,6 +254,14 @@ class Slime {
 }
 
 type StrikeEffect = { mesh: THREE.Mesh<THREE.TorusGeometry, THREE.MeshBasicMaterial>; age: number };
+type ToxicPool={
+  root:THREE.Group;
+  disc:THREE.Mesh<THREE.CircleGeometry,THREE.MeshBasicMaterial>;
+  ring:THREE.Mesh<THREE.RingGeometry,THREE.MeshBasicMaterial>;
+  age:number;
+};
+const toxicDiscGeometry=new THREE.CircleGeometry(1,24);
+const toxicRingGeometry=new THREE.RingGeometry(.86,1,24);
 type ExperienceGem = { root: THREE.Sprite; age: number; baseY: number; value: number; attracted: boolean };
 
 // Shared transparent atlas for all collectible Essence Stars (no per-drop geometry or textures).
@@ -255,6 +311,8 @@ function makeArrow(kind:AttackKind='bow'): THREE.Group {
 export class SlimeHorde {
   private readonly enemies: Slime[] = [];
   private readonly effects: StrikeEffect[] = [];
+  private readonly toxicPools:ToxicPool[]=[];
+  private toxicDamageCooldown=0;
   private readonly arrows: ArrowFlight[] = [];
   private readonly arrowPool:THREE.Group[]=[];
   private debugLimit:number|null=null;
@@ -294,7 +352,7 @@ export class SlimeHorde {
   }
   get nextWaveIn():number{return Math.max(0,Math.ceil(this.waveTimeLeft));}
   get projectileCount():number { return this.arrows.length; }
-  get effectCount():number { return this.effects.length+this.damageNumbers.length; }
+  get effectCount():number { return this.effects.length+this.damageNumbers.length+this.toxicPools.length; }
   get crystalCount():number { return this.experienceGems.length; }
 
   private random(): number {
@@ -315,7 +373,7 @@ export class SlimeHorde {
     if(slots===0){this.waveTimeLeft=3;return;}
     const requested=Math.min(slots,soloWaveSize(upcoming));
     let spawned=0;
-    for(let i=0;i<requested;i++)if(this.spawn(hero))spawned++;
+    for(let i=0;i<requested;i++)if(this.spawn(hero,upcoming))spawned++;
     if(spawned===0){this.waveTimeLeft=3;return;}
     this.wave=upcoming;
     this.waveTimeLeft=SOLO_WAVE_INTERVAL;
@@ -323,7 +381,7 @@ export class SlimeHorde {
     this.onWave(this.wave,spawned);
   }
 
-  private spawn(hero:THREE.Vector3):boolean {
+  private spawn(hero:THREE.Vector3,wave=Math.max(1,this.wave)):boolean {
     for(let attempt=0;attempt<36;attempt++){
       const angle=this.random()*Math.PI*2;
       const distance=9+this.random()*7.5;
@@ -332,10 +390,58 @@ export class SlimeHorde {
       if(this.world.collides(x,z,1.0))continue;
       if(this.enemies.some(enemy=>!enemy.dead&&
         (enemy.position.x-x)**2+(enemy.position.z-z)**2<.8*.8))continue;
-      this.enemies.push(new Slime(this.world.scene,x,z,this.random()));
+      const kind=slimeVariantForWave(wave,this.random());
+      this.enemies.push(new Slime(this.world.scene,x,z,this.random(),kind,
+        (px,pz)=>this.leaveToxicPool(px,pz)));
       return true;
     }
     return false;
+  }
+
+  private removeToxicPool(index:number):void {
+    const pool=this.toxicPools[index];
+    if(!pool)return;
+    this.world.scene.remove(pool.root);
+    pool.disc.material.dispose();
+    pool.ring.material.dispose();
+    this.toxicPools.splice(index,1);
+  }
+
+  private leaveToxicPool(x:number,z:number):void {
+    if(this.toxicPools.length>=TOXIC_POOL.maxActive)this.removeToxicPool(0);
+    const root=new THREE.Group();
+    const disc=new THREE.Mesh(toxicDiscGeometry,new THREE.MeshBasicMaterial({
+      color:'#76db88',transparent:true,opacity:.36,depthWrite:false,side:THREE.DoubleSide,
+    }));
+    const ring=new THREE.Mesh(toxicRingGeometry,new THREE.MeshBasicMaterial({
+      color:'#d0ff90',transparent:true,opacity:.72,depthWrite:false,side:THREE.DoubleSide,
+    }));
+    root.add(disc,ring);
+    ring.position.z=.014;
+    root.rotation.x=-Math.PI/2;
+    root.scale.setScalar(TOXIC_POOL.radius);
+    root.position.set(x,groundHeight(x,z)+.055,z);
+    this.world.scene.add(root);
+    this.toxicPools.push({root,disc,ring,age:0});
+  }
+
+  private updateToxicPools(dt:number,player:Player):void {
+    this.toxicDamageCooldown=Math.max(0,this.toxicDamageCooldown-dt);
+    const hero=player.root.position;
+    const standing=hero.y-groundHeight(hero.x,hero.z)<.85;
+    for(let i=this.toxicPools.length-1;i>=0;i--){
+      const pool=this.toxicPools[i]!;
+      pool.age+=dt;
+      if(pool.age>=TOXIC_POOL.duration){this.removeToxicPool(i);continue;}
+      const fade=Math.min(1,(TOXIC_POOL.duration-pool.age)/1.3);
+      pool.disc.material.opacity=.36*fade;
+      pool.ring.material.opacity=.7*fade;
+      pool.root.scale.setScalar(TOXIC_POOL.radius*(1+Math.sin(pool.age*5)*.045));
+      if(!player.defeated&&standing&&this.toxicDamageCooldown<=0&&
+        Math.hypot(hero.x-pool.root.position.x,hero.z-pool.root.position.z)<TOXIC_POOL.radius*.85){
+        if(player.takeDamage(TOXIC_POOL.damage))this.toxicDamageCooldown=.9;
+      }
+    }
   }
 
   private separateSlimes(dt:number):void {
@@ -397,13 +503,13 @@ export class SlimeHorde {
 
   private dropExperience(enemy: Slime): void {
     const close=this.experienceGems.find(item=>item.root.position.distanceTo(enemy.position)<1.5 && !item.attracted);
-    if(close){close.value+=5;this.styleExperienceStar(close);return;}
+    if(close){close.value+=enemy.expValue;this.styleExperienceStar(close);return;}
     const root=this.essenceStarPool.pop()??new THREE.Sprite(essenceStarMaterials.small);
     root.name='Gwiazda Esencji';
     root.position.copy(enemy.position);
     root.position.y+=.4;
     root.rotation.set(0,0,0);
-    const pickup:ExperienceGem={root,age:0,baseY:root.position.y,value:5,attracted:false};
+    const pickup:ExperienceGem={root,age:0,baseY:root.position.y,value:enemy.expValue,attracted:false};
     this.styleExperienceStar(pickup);
     this.world.scene.add(root);
     this.experienceGems.push(pickup);
@@ -434,6 +540,7 @@ export class SlimeHorde {
       if (enemy.finished) this.enemies.splice(i, 1);
     }
     this.separateSlimes(dt);
+    this.updateToxicPools(dt,player);
     for (let i = this.effects.length - 1; i >= 0; i--) {
       const effect = this.effects[i]!;
       effect.age += dt;
@@ -474,7 +581,12 @@ export class SlimeHorde {
     }
     if(this.contactCooldown<=0 && !player.defeated){
       const touching=this.enemies.some(enemy=>!enemy.dead && Math.hypot(enemy.position.x-hero.x,enemy.position.z-hero.z)<.9);
-      if(touching && player.takeDamage(CONTACT_DAMAGE)) this.contactCooldown=.24;
+      if(touching){
+        const strongest=this.enemies.reduce((damage,enemy)=>!enemy.dead&&
+          Math.hypot(enemy.position.x-hero.x,enemy.position.z-hero.z)<.9?
+          Math.max(damage,enemy.contactDamage):damage,0);
+        if(player.takeDamage(strongest||CONTACT_DAMAGE))this.contactCooldown=.24;
+      }
     }
     for(let i=this.experienceGems.length-1;i>=0;i--){
       const pickup=this.experienceGems[i]!;

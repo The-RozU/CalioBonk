@@ -95,9 +95,10 @@ try {
   };
   horde.onWave=(wave,spawned)=>{
     if(multiplayer.connected)return;
-    waveBanner.textContent='FALA '+wave+' · +'+spawned+' SLIME’ÓW';
+    const newcomers=wave===3?' · SZYBKIE SLIME’Y':wave===5?' · PANCERNE SLIME’Y':wave===7?' · TOKSYCZNE SLIME’Y':'';
+    waveBanner.textContent='FALA '+wave+' · +'+spawned+' SLIME’ÓW'+newcomers;
     waveBanner.classList.add('visible');
-    waveBannerUntil=elapsed+3;
+    waveBannerUntil=elapsed+(newcomers?4.5:3);
   };
   const debugEnabled=new URLSearchParams(location.search).get('debug')==='1';
   performanceOverlay.hidden=!debugEnabled;
