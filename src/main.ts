@@ -93,12 +93,13 @@ try {
     const whole=Math.floor(seconds);
     return String(Math.floor(whole/60)).padStart(2,'0')+':'+String(whole%60).padStart(2,'0');
   };
-  horde.onWave=(wave,spawned)=>{
+  horde.onThreatUnlocked=tier=>{
     if(multiplayer.connected)return;
-    const newcomers=wave===3?' · SZYBKIE SLIME’Y':wave===5?' · PANCERNE SLIME’Y':wave===7?' · TOKSYCZNE SLIME’Y':'';
-    waveBanner.textContent='FALA '+wave+' · +'+spawned+' SLIME’ÓW'+newcomers;
+    const warning=tier===3?'SZYBKIE SLIME’Y NADCHODZĄ':
+      tier===5?'PANCERNE SLIME’Y NADCHODZĄ':'TOKSYCZNE SLIME’Y NADCHODZĄ';
+    waveBanner.textContent=warning;
     waveBanner.classList.add('visible');
-    waveBannerUntil=elapsed+(newcomers?4.5:3);
+    waveBannerUntil=elapsed+4;
   };
   const debugEnabled=new URLSearchParams(location.search).get('debug')==='1';
   performanceOverlay.hidden=!debugEnabled;
@@ -236,7 +237,7 @@ upgradeCards.forEach(button=>button.addEventListener('click',()=>{
       waveHud.textContent=sharedHorde.wave?'FALA '+sharedHorde.wave+' · '+sharedHorde.alive+' WROGÓW':'FALA: OCZEKIWANIE';
     }else{
       waveHud.hidden=!started;
-      if(started)waveHud.textContent='FALA '+horde.wave+' · NAST. '+horde.nextWaveIn+' s';
+      if(started)waveHud.textContent='KOLEJNA SERIA ZA '+horde.nextBatchIn+' s';
     }
     runTimer.hidden=multiplayer.connected||!started;
     if(!runTimer.hidden)runTimer.textContent='CZAS '+formatRunTime(horde.runTime);
@@ -257,7 +258,7 @@ upgradeCards.forEach(button=>button.addEventListener('click',()=>{
       if(multiplayer.connected)runResult.hidden=true;
       else {
         runResult.hidden=false;
-        runResult.textContent='Czas: '+formatRunTime(horde.runTime)+' · Fala: '+horde.wave+' · Pokonane Slime’y: '+horde.kills;
+        runResult.textContent='Czas: '+formatRunTime(horde.runTime)+' · Pokonane Slime’y: '+horde.kills+' · Poziom: '+horde.level;
       }
       gameOver.classList.add('visible');
       reticle.classList.remove('active');

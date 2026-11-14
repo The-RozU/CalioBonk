@@ -1,19 +1,25 @@
 import assert from 'node:assert/strict';
-import {SOLO_WAVE_INTERVAL,SOLO_CLEAR_DELAY,SOFT_SLIME_DISTANCE,
-  soloWaveSize,soloWaveCap,slimeSeparation} from '../src/game/SoloSurvival.mjs';
+import {SOLO_ATTACK_RANGE,SUMMON_DELAY,SUMMON_DURATION,SUMMON_MIN_DISTANCE,SUMMON_MAX_DISTANCE,
+  SOFT_SLIME_DISTANCE,soloThreatTier,soloBatchSize,soloActiveCap,soloBatchInterval,
+  slimeSeparation} from '../src/game/SoloSurvival.mjs';
 
-assert.equal(SOLO_WAVE_INTERVAL,25);
-assert.ok(SOLO_CLEAR_DELAY>0);
-assert.deepEqual([1,2,3,4,5,6].map(soloWaveSize),[7,10,13,16,19,22]);
-assert.equal(soloWaveCap(1),20);
-assert.equal(soloWaveCap(5),52);
-assert.equal(soloWaveCap(30),120);
-assert.equal(soloWaveSize(99),42);
-assert.equal(soloWaveSize(0),0);
-
+assert.equal(SOLO_ATTACK_RANGE,13.5);
+assert.ok(SUMMON_DURATION>SUMMON_DELAY);
+assert.ok(SUMMON_MIN_DISTANCE>SOLO_ATTACK_RANGE);
+assert.ok(SUMMON_MAX_DISTANCE>SUMMON_MIN_DISTANCE);
+assert.equal(soloThreatTier(0),1);
+assert.equal(soloThreatTier(38),3); // Blue slime unlock.
+assert.equal(soloThreatTier(76),5); // Red slime unlock.
+assert.equal(soloThreatTier(114),7); // Toxic slime unlock.
+for(let time=0;time<1200;time+=8){
+  assert.ok(soloBatchSize(time)>=4&&soloBatchSize(time)<=10);
+  assert.ok(soloActiveCap(time)>=soloBatchSize(time)&&soloActiveCap(time)<=115);
+  assert.ok(soloBatchInterval(time)>=3.6&&soloBatchInterval(time)<=6.5);
+}
+assert.ok(soloBatchSize(240)>soloBatchSize(0));
+assert.ok(soloBatchInterval(240)<soloBatchInterval(0));
 const separated=slimeSeparation([{x:0,z:0},{x:2,z:0}],.016);
 assert.deepEqual(separated,[{x:0,z:0},{x:0,z:0}]);
-
 const near=[{x:0,z:0},{x:.18,z:0}];
 for(let i=0;i<45;i++){
   const delta=slimeSeparation(near,.016);
@@ -21,7 +27,6 @@ for(let i=0;i<45;i++){
 }
 assert.ok(Math.abs(near[1].x-near[0].x)>=SOFT_SLIME_DISTANCE-.005,
   'two touching Slimes separate smoothly');
-
 const packed=Array.from({length:250},()=>({x:0,z:0}));
 for(let tick=0;tick<30;tick++){
   const deltas=slimeSeparation(packed,.016);
@@ -32,4 +37,4 @@ for(let tick=0;tick<30;tick++){
   }
 }
 assert.ok(packed.some(p=>Math.hypot(p.x,p.z)>.3),'dense crowd begins to spread');
-console.log('OK: Solo wave progression, caps, neighbor-based separation (250 mobs)');
+console.log('OK: continuous short bursts, distant summoning, short attack range and separation');

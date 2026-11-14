@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { groundHeight } from './Terrain';
+import {SOLO_ATTACK_RANGE} from './SoloSurvival.mjs';
 import type { Input } from './Input';
 import type { World } from './World';
 
@@ -121,7 +122,7 @@ export class Player {
     if (this.dashing || this.attackTime > 0) return false;
     const dx=target.x-this.root.position.x;
     const dz=target.z-this.root.position.z;
-    if (Math.hypot(dx,dz)>24*this.stats.range) return false;
+    if(Math.hypot(dx,dz)>SOLO_ATTACK_RANGE*this.stats.range)return false;
     this.attackHeading=Math.atan2(-dx,-dz);
     this.attackTime=this.attackDuration;
     return true;

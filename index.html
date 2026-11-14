@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0b100e" />
     <meta name="description" content="CalioBonk. Prototyp mrocznej gry survival 3D w świecie Calionu." />
-    <title>CalioBonk | v0.0.21</title>
+    <title>CalioBonk | v0.0.22</title>
   </head>
   <body>
     <div id="app">
@@ -23,24 +23,27 @@
           <span id="run-timer" class="run-timer" hidden>CZAS 00:00</span>
           <span id="wave-hud" class="wave-hud" hidden>FALA: OCZEKIWANIE</span>
           <span id="mp-indicator" class="mp-indicator" hidden>POKÓJ · 1/4</span>
-          <span class="version">ALFA v0.0.21</span>
+          <span class="version">ALFA v0.0.22</span>
         </div>
       </header>
 
-      <div class="goal" id="goal" aria-live="polite">
-        <div class="goal-icon">✦</div>
-        <div class="goal-copy"><small>CEL EKSPLORACJI</small><strong>Odnajdź starą bramę</strong><span id="goal-distance">Podążaj ku ruinom</span></div>
-      </div>
-
-      <div class="combat-hud" aria-label="Statystyki walki">
+      <aside class="hud-group hud-group-left" aria-label="Walka i życie">
+        <div class="combat-hud" aria-label="Statystyki walki">
         <span class="combat-emblem">⚔</span>
         <div class="combat-details"><small>POLIGON WALKI · SLIME</small><strong>Pokonane: <span id="slime-kills">0</span></strong><small>W pobliżu: <span id="slime-alive">0</span> · ATAK AUTOMATYCZNY</small></div>
       </div>
-
-      <section class="hero-health" aria-label="Zdrowie bohatera"><div class="hero-health-heading"><span>ŻYCIE ŁUCZNIKA</span><strong id="hero-health">100 / 100</strong></div><div class="hero-health-track"><div id="hero-health-fill"></div></div></section>
+        <section class="hero-health" aria-label="Zdrowie bohatera"><div class="hero-health-heading"><span>ŻYCIE ŁUCZNIKA</span><strong id="hero-health">100 / 100</strong></div><div class="hero-health-track"><div id="hero-health-fill"></div></div></section>
+      </aside>
+      <aside class="hud-group hud-group-right" aria-label="Cel i doświadczenie">
+        <div class="goal" id="goal" aria-live="polite">
+        <div class="goal-icon">✦</div>
+        <div class="goal-copy"><small>CEL EKSPLORACJI</small><strong>Odnajdź starą bramę</strong><span id="goal-distance">Podążaj ku ruinom</span></div>
+      </div>
+        <section class="experience-hud" aria-label="Poziom i doświadczenie"><div><strong id="hero-level">POZIOM 1</strong><span id="hero-exp">0 / 15 EXP</span></div><div class="experience-track"><i id="hero-exp-fill"></i></div></section>
+      </aside>
       <div id="damage-flash" class="damage-flash" aria-hidden="true"></div>
       <div id="game-over" class="game-over" role="dialog" aria-modal="true"><div><small>WYPRAWA ZAKOŃCZONA</small><h2>Bohater poległ</h2><p>Slime’y przejęły pogranicze. Zbierz siły i spróbuj ponownie.</p><p id="run-result" class="run-result" hidden></p><button id="retry-button" type="button">ROZPOCZNIJ PONOWNIE</button></div></div>
-      <section class="experience-hud" aria-label="Poziom i doświadczenie"><div><strong id="hero-level">POZIOM 1</strong><span id="hero-exp">0 / 15 EXP</span></div><div class="experience-track"><i id="hero-exp-fill"></i></div></section>
+
       <div id="level-up" class="level-up" role="status">AWANSOWANO · NOWY POZIOM</div>
       <div id="wave-banner" class="wave-banner" role="status" aria-live="polite"></div>
       <div id="active-attacks" class="active-attacks" aria-label="Aktywne ataki">🏹 Łuk</div>
@@ -67,7 +70,7 @@
       <div id="menu" class="menu-scrim" role="dialog" aria-modal="true" aria-labelledby="menu-title">
         <div class="menu-panel">
           <div class="crest" aria-hidden="true"><div class="crest-inner">C</div></div>
-          <p class="eyebrow">PIERWSZA WYPRAWA · PROTOTYP v0.0.21</p>
+          <p class="eyebrow">PIERWSZA WYPRAWA · PROTOTYP v0.0.22</p>
           <h1 id="menu-title">CALIO<span>BONK</span></h1>
           <div class="title-divider"><span></span>✦<span></span></div>
           <p id="menu-desc" class="menu-desc">Na krańcu Calionu stoją zapomniane ruiny. Pokonuj skaczące Slime’y automatycznymi strzałami i odkryj starą bramę.</p>

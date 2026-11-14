@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { groundHeight } from './Terrain';
-import {SOLO_WAVE_INTERVAL,SOLO_CLEAR_DELAY,soloWaveSize,soloWaveCap,slimeSeparation} from './SoloSurvival.mjs';
+import {SOLO_ATTACK_RANGE,SUMMON_DELAY,SUMMON_DURATION,SUMMON_MIN_DISTANCE,SUMMON_MAX_DISTANCE,
+  soloThreatTier,soloBatchSize,soloActiveCap,soloBatchInterval,slimeSeparation} from './SoloSurvival.mjs';
+import {SummoningLight} from './SummoningLight';
 import {SLIME_TRAITS,TOXIC_POOL,slimeVariantForWave} from './SlimeVariants.mjs';
 import type {SlimeKind} from './SlimeVariants.mjs';
 import type { World } from './World';
@@ -195,7 +197,7 @@ class Slime {
     const dx = hero.x - this.root.position.x;
     const dz = hero.z - this.root.position.z;
     const distance = Math.hypot(dx, dz);
-    const chasing = distance > .95 && distance < 38;
+    const chasing=distance>.95;
 
     if (this.height <= 0 && this.verticalSpeed <= 0 && chasing && this.jumpDelay <= 0) {
       this.verticalSpeed=SLIME_TRAITS[this.kind].jumpPower;
@@ -209,8 +211,20 @@ class Slime {
         const sideways=this.kind==='blue'?Math.sin(this.age*9+this.variation*8)*.24:0;
         const nextX=this.root.position.x+(this.direction.x-this.direction.y*sideways)*speed*dt;
         const nextZ=this.root.position.z+(this.direction.y+this.direction.x*sideways)*speed*dt;
-        if (!world.collides(nextX, this.root.position.z, .24)) this.root.position.x = nextX;
-        if (!world.collides(this.root.position.x, nextZ, .24)) this.root.position.z = nextZ;
+        const wasX=this.root.position.x,wasZ=this.root.position.z;
+        if(!world.collides(nextX,this.root.position.z,.24))this.root.position.x=nextX;
+        if(!world.collides(this.root.position.x,nextZ,.24))this.root.position.z=nextZ;
+        // Walk around trees and stones when a direct approach is blocked.
+        if(Math.hypot(this.root.position.x-wasX,this.root.position.z-wasZ)<.025*dt){
+          const side=Math.sin(this.age*.8+this.variation*13)>0?1:-1;
+          const step=2.2*dt;
+          const sidex=-this.direction.y*side*step;
+          const sidez=this.direction.x*side*step;
+          if(!world.collides(wasX+sidex,wasZ+sidez,.24)){
+            this.root.position.x=wasX+sidex;
+            this.root.position.z=wasZ+sidez;
+          }
+        }
       }
       this.verticalSpeed -= 17.5 * dt;
       this.height += this.verticalSpeed * dt;
@@ -316,6 +330,9 @@ export class SlimeHorde {
   private readonly arrows: ArrowFlight[] = [];
   private readonly arrowPool:THREE.Group[]=[];
   private debugLimit:number|null=null;
+  private readonly summoning:Array<{light:SummoningLight;count:number;tier:number;released:boolean}>=[];
+  private spawnCooldown=0;
+  private lastAnnouncedTier=1;
   private readonly maxDamageNumbers=24;
   private readonly experienceGems: ExperienceGem[] = [];
   private readonly essenceStarPool: THREE.Sprite[] = [];
@@ -333,12 +350,9 @@ export class SlimeHorde {
   private readonly damageNumbers: Array<{sprite:THREE.Sprite;age:number}> = [];
   private seed = 72819;
   private cooldown = 0;
-  private started = false;
-  private waveTimeLeft=0;
-  private quietTime=0;
-  wave=0;
+  private started=false;
   runTime=0;
-  onWave:(wave:number,spawned:number)=>void=()=>{};
+  onThreatUnlocked:(tier:number)=>void=()=>{};
   kills = 0;
 
   constructor(private readonly world: World) {}
@@ -350,7 +364,7 @@ export class SlimeHorde {
     this.debugLimit=limit;
     while(this.alive<limit){if(!this.spawn(hero))break;}
   }
-  get nextWaveIn():number{return Math.max(0,Math.ceil(this.waveTimeLeft));}
+  get nextBatchIn():number{return Math.max(0,Math.ceil(this.spawnCooldown));}
   get projectileCount():number { return this.arrows.length; }
   get effectCount():number { return this.effects.length+this.damageNumbers.length+this.toxicPools.length; }
   get crystalCount():number { return this.experienceGems.length; }
@@ -360,42 +374,75 @@ export class SlimeHorde {
     return this.seed / 4294967296;
   }
 
-  start(hero: THREE.Vector3): void {
+  start(hero:THREE.Vector3):void{
     if(this.started)return;
     this.started=true;
-    this.beginWave(hero);
+    this.scheduleBatch(hero);
+    this.spawnCooldown=soloBatchInterval(this.runTime);
   }
 
-  private beginWave(hero:THREE.Vector3):void {
-    const upcoming=this.wave+1;
-    const cap=this.debugLimit??soloWaveCap(upcoming);
-    const slots=Math.max(0,cap-this.alive);
-    if(slots===0){this.waveTimeLeft=3;return;}
-    const requested=Math.min(slots,soloWaveSize(upcoming));
-    let spawned=0;
-    for(let i=0;i<requested;i++)if(this.spawn(hero,upcoming))spawned++;
-    if(spawned===0){this.waveTimeLeft=3;return;}
-    this.wave=upcoming;
-    this.waveTimeLeft=SOLO_WAVE_INTERVAL;
-    this.quietTime=0;
-    this.onWave(this.wave,spawned);
+  private spawnAt(x:number,z:number,tier:number):boolean{
+    if(this.world.collides(x,z,.9))return false;
+    if(this.enemies.some(enemy=>!enemy.dead&&
+      (enemy.position.x-x)**2+(enemy.position.z-z)**2<.81))return false;
+    const kind=slimeVariantForWave(tier,this.random());
+    this.enemies.push(new Slime(this.world.scene,x,z,this.random(),kind,
+      (px,pz)=>this.leaveToxicPool(px,pz)));
+    return true;
   }
 
-  private spawn(hero:THREE.Vector3,wave=Math.max(1,this.wave)):boolean {
-    for(let attempt=0;attempt<36;attempt++){
+  // Debug stress tests still place enemies instantly, outside the normal summoning loop.
+  private spawn(hero:THREE.Vector3):boolean{
+    for(let i=0;i<40;i++){
       const angle=this.random()*Math.PI*2;
-      const distance=9+this.random()*7.5;
-      const x=hero.x+Math.sin(angle)*distance;
-      const z=hero.z+Math.cos(angle)*distance;
-      if(this.world.collides(x,z,1.0))continue;
-      if(this.enemies.some(enemy=>!enemy.dead&&
-        (enemy.position.x-x)**2+(enemy.position.z-z)**2<.8*.8))continue;
-      const kind=slimeVariantForWave(wave,this.random());
-      this.enemies.push(new Slime(this.world.scene,x,z,this.random(),kind,
-        (px,pz)=>this.leaveToxicPool(px,pz)));
-      return true;
+      const distance=SUMMON_MIN_DISTANCE+(SUMMON_MAX_DISTANCE-SUMMON_MIN_DISTANCE)*this.random();
+      if(this.spawnAt(hero.x+Math.sin(angle)*distance,hero.z+Math.cos(angle)*distance,soloThreatTier(this.runTime)))return true;
     }
     return false;
+  }
+
+  private scheduleBatch(hero:THREE.Vector3):void{
+    if(this.summoning.length>=2)return;
+    const slots=soloActiveCap(this.runTime)-this.alive;
+    if(slots<=0)return;
+    for(let attempt=0;attempt<65;attempt++){
+      const angle=this.random()*Math.PI*2;
+      const distance=SUMMON_MIN_DISTANCE+(SUMMON_MAX_DISTANCE-SUMMON_MIN_DISTANCE)*this.random();
+      const x=hero.x+Math.cos(angle)*distance,z=hero.z+Math.sin(angle)*distance;
+      if(this.world.collides(x,z,2.2))continue;
+      if(this.summoning.some(item=>Math.hypot(item.light.x-x,item.light.z-z)<7))continue;
+      const count=Math.min(slots,soloBatchSize(this.runTime)+(this.random()<.35?1:0));
+      this.summoning.push({light:new SummoningLight(this.world.scene,x,z),
+        count,tier:soloThreatTier(this.runTime),released:false});
+      return;
+    }
+  }
+
+  private updateSummons(dt:number):void{
+    for(let i=this.summoning.length-1;i>=0;i--){
+      const batch=this.summoning[i]!;
+      batch.light.update(dt);
+      if(!batch.released&&batch.light.age>=SUMMON_DELAY){
+        batch.released=true;
+        let spawned=0;
+        const count=Math.min(batch.count,Math.max(0,soloActiveCap(this.runTime)-this.alive));
+        for(let n=0;n<count;n++){
+          for(let attempt=0;attempt<24;attempt++){
+            const angle=this.random()*Math.PI*2;
+            const distance=.55+this.random()*3.6;
+            const x=batch.light.x+Math.cos(angle)*distance;
+            const z=batch.light.z+Math.sin(angle)*distance;
+            if(this.spawnAt(x,z,batch.tier)){spawned++;break;}
+          }
+        }
+        // If the terrain is very crowded, the next scheduled group can try another clearing.
+        if(spawned===0)this.spawnCooldown=Math.min(this.spawnCooldown,1.3);
+      }
+      if(batch.light.age>=SUMMON_DURATION){
+        batch.light.dispose();
+        this.summoning.splice(i,1);
+      }
+    }
   }
 
   private removeToxicPool(index:number):void {
@@ -530,7 +577,13 @@ export class SlimeHorde {
     if (!this.started) return;
     const hero=player.root.position;
     this.runTime+=dt;
-    this.waveTimeLeft=Math.max(0,this.waveTimeLeft-dt);
+    const tier=soloThreatTier(this.runTime);
+    if(tier>this.lastAnnouncedTier){
+      this.lastAnnouncedTier=tier;
+      if(tier===3||tier===5||tier===7)this.onThreatUnlocked(tier);
+    }
+    this.spawnCooldown=Math.max(0,this.spawnCooldown-dt);
+    this.updateSummons(dt);
     this.contactCooldown=Math.max(0,this.contactCooldown-dt);
 
     for (let i = this.enemies.length - 1; i >= 0; i--) {
@@ -616,7 +669,7 @@ export class SlimeHorde {
     this.cooldown = Math.max(0, this.cooldown - dt);
     if (this.cooldown <= 0) {
       let closest: Slime | undefined;
-      let distanceSq = (24*player.stats.range) ** 2;
+      let distanceSq=(SOLO_ATTACK_RANGE*player.stats.range)**2;
       for (const enemy of this.enemies) {
         if (enemy.dead) continue;
         const dx = enemy.position.x - hero.x;
@@ -638,7 +691,10 @@ export class SlimeHorde {
       }
     }
 
-    const target=this.enemies.filter(e=>!e.dead).sort((a,b)=>a.position.distanceToSquared(hero)-b.position.distanceToSquared(hero))[0];
+    const specialRangeSq=(SOLO_ATTACK_RANGE*player.stats.range)**2;
+    const target=this.enemies.filter(e=>!e.dead&&
+      (e.position.x-hero.x)**2+(e.position.z-hero.z)**2<specialRangeSq)
+      .sort((a,b)=>a.position.distanceToSquared(hero)-b.position.distanceToSquared(hero))[0];
     const fire=(kind:AttackKind,count=1,pierce=0):void=>{
       if(!target)return;
       for(let n=0;n<count;n++){
@@ -654,10 +710,12 @@ export class SlimeHorde {
     if(player.stats.tripleLevel>0&&this.tripleCooldown===0){fire('triple',3);this.tripleCooldown=Math.max(1.1,2.2-player.stats.tripleLevel*.12);}
     if(player.stats.poisonLevel>0&&this.poisonCooldown===0){fire('poison');this.poisonCooldown=Math.max(1.8,3.3-player.stats.poisonLevel*.18);}
     if(player.stats.pierceLevel>0&&this.pierceCooldown===0){fire('piercing',1,player.stats.pierceLevel);this.pierceCooldown=Math.max(1.5,2.6-player.stats.pierceLevel*.15);}
-    if(this.alive===0){
-      this.quietTime+=dt;
-      if(this.quietTime>=SOLO_CLEAR_DELAY)this.waveTimeLeft=0;
-    }else this.quietTime=0;
-    if(this.waveTimeLeft<=0)this.beginWave(hero);
+    // Continuous groups, not waves: schedule from the player's current position.
+    if(this.spawnCooldown<=0){
+      if(this.alive<soloActiveCap(this.runTime)&&this.summoning.length===0){
+        this.scheduleBatch(hero);
+      }
+      this.spawnCooldown=soloBatchInterval(this.runTime);
+    }
   }
 }

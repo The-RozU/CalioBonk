@@ -1,20 +1,29 @@
-// Shared pure rules for SOLO waves and soft Slime separation.
-// Keep this module independent from Three.js so it can be tested under Node.js.
-export const SOLO_WAVE_INTERVAL=25;
-export const SOLO_CLEAR_DELAY=3.5;
+// SOLO pacing and movement constants. Time is active gameplay time only.
+export const SOLO_ATTACK_RANGE=13.5;
+export const SUMMON_DELAY=1.3;
+export const SUMMON_DURATION=3.5;
 export const SOFT_SLIME_DISTANCE=.72;
+export const SUMMON_MIN_DISTANCE=21;
+export const SUMMON_MAX_DISTANCE=29;
 
-export function soloWaveSize(wave){
-  if(!Number.isFinite(wave)||wave<1)return 0;
-  return Math.min(42,4+Math.floor(wave)*3);
+export function soloThreatTier(seconds){
+  if(!Number.isFinite(seconds)||seconds<0)return 1;
+  return Math.min(7,1+Math.floor(seconds/19));
 }
-export function soloWaveCap(wave){
-  if(!Number.isFinite(wave)||wave<1)return 0;
-  return Math.min(120,12+Math.floor(wave)*8);
+export function soloBatchSize(seconds){
+  if(!Number.isFinite(seconds)||seconds<0)return 4;
+  return Math.min(10,4+Math.floor(seconds/38));
+}
+export function soloActiveCap(seconds){
+  if(!Number.isFinite(seconds)||seconds<0)return 16;
+  return Math.min(115,16+Math.floor(seconds/24)*6);
+}
+export function soloBatchInterval(seconds){
+  if(!Number.isFinite(seconds)||seconds<0)return 6.5;
+  return Math.max(3.6,6.5-seconds/135);
 }
 
-// Spatial buckets limit comparisons to nearby neighbors, rather than all pairs.
-// Return per-enemy corrections: geometry, physics, and map collisions remain client-owned.
+// Spatial buckets compare only nearby Slimes, not every possible pair.
 export function slimeSeparation(positions,dt){
   const offsets=Array.from({length:positions.length},()=>({x:0,z:0}));
   if(positions.length<2||dt<=0)return offsets;
@@ -41,7 +50,6 @@ export function slimeSeparation(positions,dt){
           if(sq>=minSq)continue;
           let dist=Math.sqrt(sq);
           if(dist<.0001){
-            // Deterministic fallback when two mobs have identical coordinates.
             const angle=((i*131+j*67)%360)*Math.PI/180;
             dx=Math.cos(angle);dz=Math.sin(angle);dist=1;
             const force=SOFT_SLIME_DISTANCE*tension*.5;

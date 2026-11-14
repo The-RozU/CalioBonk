@@ -2,7 +2,7 @@
 
 Gra 3D w świecie Calionu, inspirowana roguelike survival games. Projekt odrębny od **Calion Survivors**.
 
-**Wersja:** 0.0.21  
+**Wersja:** 0.0.22  
 **Technologia:** Three.js + TypeScript + Vite  
 **Zakres:** eksploracja 3D z doskokiem, skaczącymi Slime'ami i automatyczną walką dystansową
 
@@ -32,11 +32,11 @@ npm run preview
 | Spacja | Skok |
 | Esc | Pauza i uwolnienie kursora |
 
-## Zakres v0.0.21
+## Zakres v0.0.22
 
 - Leśna mapa 3D z ruinami i punktem docelowym.
 - Model łucznika low-poly z łukiem, kołczanem i animacją naciągania; zachowano chód, skok i doskok.
-- Automatyczne namierzanie najbliższego Slime'a do 24 m i widoczne strzały w locie.
+- Automatyczne namierzanie najbliższego Slime'a do 13,5 m w Solo (zwiększane kartą zasięgu) i widoczne strzały w locie.
 - Kamera trzecioosobowa i kolizje terenowe.
 - HUD, menu startowe i pauza, znacznik celu i odkrycie lokacji.
 - Tekstury `.webp`.
@@ -60,9 +60,9 @@ npm run preview
 - Oba warianty korzystają z tej samej logiki ruchu, skoków, HP, obrażeń, trucizny, EXP i hitboxów.
 - Panel `?debug=1` udostępnia limity testowe hord: 25, 50, 100, 200 i 300 Slime’ów.
 - Kolizje świata używają indeksu przestrzennego; pociski są ponownie wykorzystywane, liczby obrażeń mają limit, a bliskie kryształy łączą EXP bez strat.
-- **Solo v0.0.19:** fale Slime’ów zamiast pojedynczych spawnów (7, 10, 13, 16 itd., maksymalnie 42 nowe potwory na falę), kolejne co 25 sekund lub szybciej po wybiciu całej grupy; maksymalna liczba aktywnych mobów rośnie wraz z falą do 120.
+- **Solo v0.0.22:** niekończące się **serie** 4–10 Slime’ów przywoływane co około 3,6–6,5 sekundy aktywnej rozgrywki. Potwory pojawiają się 21–29 jednostek od gracza, w świetlistej strefie przywołania, z 1,3-sekundowym ostrzeżeniem. Limit żywych rośnie wraz z czasem do 115; nie ma numerów fal.
 - **Solo v0.0.19:** miękkie odpychanie Slime’ów z indeksem przestrzennym, dystansem około 0,72 jednostki i bez sztywnych kolizji, zarówno dla sprite’ów, jak i modelu 3D.
-- **Solo v0.0.19:** zegar przetrwania MM:SS, numer fali i czas do kolejnej grupy w HUD. Pauza i wybieranie kart w Solo zatrzymują zegar i potwory; ekran śmierci pokazuje czas, falę oraz zabójstwa.
+- **Solo v0.0.22:** zegar przetrwania MM:SS i czas do kolejnej serii w HUD. Pauza i wybieranie kart w Solo zatrzymują zegar oraz potwory; ekran śmierci pokazuje czas, poziom i liczbę zabójstw. Panele HP/EXP i celu/walki tworzą osobne, niekolidujące pionowe kolumny.
 - Zmiana nazwy projektu na **CalioBonk**, przygotowanie automatycznej publikacji na Pages z gałęzi `dev-mode`.
 
 ## GitHub Pages i gałęzie
@@ -111,26 +111,35 @@ Dostosowanie v0.0.18: fale rozdzielane są między aktywnych graczy, a obrażeni
 
 ## Testy rozgrywki Solo v0.0.19
 
-Uruchom `npm run test:solo`, aby sprawdzić narastanie fal, limity aktywnych mobów, brak odpychania odległych Slime’ów i rozdzielenie 250 nałożonych sprite’ów. Mechanika jest dostępna w Solo bez uruchamiania serwera. Multiplayer ALFA pozostawiono bez zmian i nadal wymaga lokalnego serwera; osobne testy protokołu online to `npm run test:multiplayer` i `npm run test:horde`.
+Uruchom `npm run test:solo`, aby sprawdzić tempo krótkich serii, ich limity, dystans przywołań i rozdzielenie 250 nałożonych sprite’ów. Mechanika jest dostępna w Solo bez uruchamiania serwera. Multiplayer ALFA pozostawiono bez zmian i nadal wymaga lokalnego serwera; osobne testy protokołu online to `npm run test:multiplayer` i `npm run test:horde`.
 
-Pierwsza fala: 7 Slime’ów, druga: 10, trzecia: 13. Fale nadchodzą co około 25 sekund czasu aktywnej rozgrywki; gdy wszystkie wcześniejsze potwory zginą, kolejna grupa pojawi się po krótkim odpoczynku. Licznik czasu nie nalicza pauzy ani wyboru ulepszenia. Panel `?debug=1` nadal pozwala testować 25–300 wrogów, bez wpływania na zwykły balans Solo.
+Pierwsze przywołanie: 4–5 Slime’ów po 1,3 sekundy świetlnego ostrzeżenia. Następne grupy nadchodzą co około 6,5 sekundy czasu aktywnej rozgrywki, z czasem coraz szybciej. Zegar zatrzymuje się podczas pauzy i wyboru ulepszenia. Panel `?debug=1` nadal umożliwia test 25–300 wrogów, niezależnie od normalnego balansu Solo.
 
 
 ## v0.0.20: cztery odmiany Slime’ów w Solo
 
 Nowe typy wprowadzane stopniowo, bez zmiany zasad multiplayer ALFA:
 
-| Typ | Od fali | HP | Ruch | Obrażenia kontaktowe | EXP | Właściwość |
+| Typ | Od czasu Solo | HP | Ruch | Obrażenia kontaktowe | EXP | Właściwość |
 | --- | --- | ---: | --- | ---: | ---: | --- |
-| Zielony | 1 | 36 | zwykły (3,0) | 12 | 5 | podstawowy przeciwnik |
-| Niebieski | 3 | 24 | szybki (4,8), zygzaki | 9 | 5 | częste skoki |
-| Czerwony | 5 | 96 | powolny (2,0), większy | 18 | 12 | wytrzymały i groźny przy kontakcie |
-| Toksyczny | 7 | 48 | umiarkowany (2,7) | 10 | 8 | po lądowaniu pozostawia kałuże trucizny |
+| Zielony | start | 36 | zwykły (3,0) | 12 | 5 | podstawowy przeciwnik |
+| Niebieski | ~38 s | 24 | szybki (4,8), zygzaki | 9 | 5 | częste skoki |
+| Czerwony | ~76 s | 96 | powolny (2,0), większy | 18 | 12 | wytrzymały i groźny przy kontakcie |
+| Toksyczny | ~114 s | 48 | umiarkowany (2,7) | 10 | 8 | po lądowaniu pozostawia kałuże trucizny |
 
 - Kolory sprite’ów uzyskiwane są proceduralnie z oryginalnej tekstury i współdzielone przez wszystkie Slime’y tego typu. Modele 3D również mają przypisane kolory. Nie trzeba pobierać dodatkowych obrazów.
 - Kałuże trucizny są widoczne na ziemi, trwają 4,2 s i zadają 7 obrażeń przy wejściu; można je przeskoczyć. Ich liczba jest ograniczona do 28, a zasoby wizualne są zwalniane po zniknięciu kałuży.
-- Nagrody EXP zależą od typu, także podczas scalania Gwiazd Esencji. Podczas fal 1–2 pojawiają się wyłącznie Zielone Slime’y.
-- W falach 3, 5 i 7 komunikat na ekranie sygnalizuje nowego przeciwnika. W walce Solo pozostają niezmienione bazowe ataki łucznika, stary multiplayer oraz miękka separacja Slime’ów.
+- Nagrody EXP zależą od typu, także podczas scalania Gwiazd Esencji. Na początku rozgrywki pojawiają się wyłącznie Zielone Slime’y.
+- Około 38., 76. i 114. sekundy aktywnej gry komunikat sygnalizuje odblokowanie nowego typu przeciwnika. Poprzedni system fal multiplayer nadal pozostaje bez zmian.
 - Testy zasad i balansu typów: \`npm run test:variants\`. Testy działają również w GitHub Actions.
 
 **v0.0.21:** poprawka zgodności z rygorystycznym sprawdzaniem TypeScript przy generowaniu kolorów tekstur Slime’ów. Brak zmian w mechanikach rozgrywki.
+
+
+## v0.0.22: ciągły napływ Slime’ów, przywołania i HUD
+
+- Zamiast fal numerowanych w Solo pojawiają się niewielkie serie Slime’ów. Ich tempo i liczebność rosną płynnie z czasem.
+- Każde miejsce przywołania jest zapowiedziane kolumną światła z nieba, rozświetlonym kręgiem i drobnymi iskrami. Efekt zanika po około 3,5 sekundy. Slime’y wychodzą z tej strefy po 1,3 sekundy.
+- Zasięg podstawowego i specjalnych ataków łucznika wynosi bazowo 13,5 jednostki; karta zasięgu nadal go zwiększa. Wszystkie Slime’y aktywnie podążają w kierunku postaci, niezależnie od odległości, i próbują obejść przeszkody.
+- Lewa i prawa część HUD mają niezależne pionowe kolumny, więc panele nie powinny na siebie nachodzić. Zamiast fali HUD Solo wyświetla czas do następnej serii.
+- Multiplayer pozostaje eksperymentalny i **nie jest objęty** nowym systemem spawnów. Nie wymaga uruchamiania serwera przy grze Solo.
