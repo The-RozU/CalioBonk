@@ -234,9 +234,11 @@ const essenceStarTexture=(()=>{
   texture.minFilter=THREE.LinearFilter;texture.magFilter=THREE.LinearFilter;
   return texture;
 })();
-const essenceStarMaterial=new THREE.SpriteMaterial({
-  map:essenceStarTexture,transparent:true,depthWrite:false,depthTest:true,
-});
+const essenceStarMaterials={
+  small:new THREE.SpriteMaterial({map:essenceStarTexture,color:'#ffffff',transparent:true,depthWrite:false,depthTest:true}),
+  medium:new THREE.SpriteMaterial({map:essenceStarTexture,color:'#8fffb6',transparent:true,depthWrite:false,depthTest:true}),
+  large:new THREE.SpriteMaterial({map:essenceStarTexture,color:'#ffe8a5',transparent:true,depthWrite:false,depthTest:true}),
+};
 type ArrowFlight = { mesh: THREE.Group; target: Slime; age: number; damage:number; criticalChance:number; kind:AttackKind; pierce:number; hit:Set<Slime> };
 
 function makeArrow(kind:AttackKind='bow'): THREE.Group {
@@ -339,7 +341,7 @@ export class SlimeHorde {
   private styleExperienceStar(pickup:ExperienceGem):void {
     const value=pickup.value;
     // Color encodes stacked EXP without needing extra textures or materials.
-    pickup.root.color.set(value>=100?'#ffe8a5':value>=25?'#8fffb6':'#ffffff');
+    pickup.root.material=value>=100?essenceStarMaterials.large:value>=25?essenceStarMaterials.medium:essenceStarMaterials.small;
     const size=value>=100?1.1:value>=25?.83:.64;
     pickup.root.scale.setScalar(size);
   }
@@ -347,7 +349,7 @@ export class SlimeHorde {
   private dropExperience(enemy: Slime): void {
     const close=this.experienceGems.find(item=>item.root.position.distanceTo(enemy.position)<1.5 && !item.attracted);
     if(close){close.value+=5;this.styleExperienceStar(close);return;}
-    const root=this.essenceStarPool.pop()??new THREE.Sprite(essenceStarMaterial);
+    const root=this.essenceStarPool.pop()??new THREE.Sprite(essenceStarMaterials.small);
     root.name='Gwiazda Esencji';
     root.position.copy(enemy.position);
     root.position.y+=.4;
