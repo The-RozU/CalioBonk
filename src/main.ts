@@ -6,6 +6,7 @@ import { Player } from './game/Player';
 import { CameraController } from './game/CameraController';
 import { SlimeHorde } from './game/Slimes';
 import { Multiplayer } from './network/Multiplayer';
+import { SharedHorde } from './network/SharedHorde';
 
 const viewport=document.querySelector<HTMLDivElement>('#viewport')!;
 const menu=document.querySelector<HTMLDivElement>('#menu')!;
@@ -65,6 +66,10 @@ try {
   const player=new Player(world.scene);
   const horde=new SlimeHorde(world);
   const multiplayer=new Multiplayer(world.scene);
+  const sharedHorde=new SharedHorde(world.scene);
+  multiplayer.onEnemies=(enemies,kills)=>sharedHorde.sync(enemies,kills);
+  multiplayer.onEnemyKilled=(exp)=>horde.grantSharedExperience(exp);
+  multiplayer.onHealth=(hp)=>{player.health=hp;};
   const input=new Input(renderer.domElement);
   input.yaw=-.77;
   const camera=new CameraController(player,input,world);
@@ -135,11 +140,13 @@ upgradeCards.forEach(button=>button.addEventListener('click',()=>{
   input.onLockChange=(active:boolean):void=>{
     if(active){
       started=true;
-      horde.start(player.root.position);
+      if(!multiplayer.connected)horde.start(player.root.position);
+      multiplayer.setReady(true);
       menu.classList.add('hidden');
       document.body.classList.add('in-game');
       reticle.classList.add('active');
     }else{
+      multiplayer.setReady(false);
       if(!choosingUpgrade && !gameOverShown) showMenu(started);
     }
   };
@@ -193,8 +200,8 @@ upgradeCards.forEach(button=>button.addEventListener('click',()=>{
       notice.classList.add('visible');
     }
     distanceText.textContent=foundGate?'Lokacja odkryta · dalsza eksploracja':`${Math.round(distance)} m do celu`;
-    slimeKills.textContent=String(horde.kills);
-    slimeAlive.textContent=String(horde.alive);
+    slimeKills.textContent=String(multiplayer.connected?sharedHorde.kills:horde.kills);
+    slimeAlive.textContent=String(multiplayer.connected?sharedHorde.alive:horde.alive);
     levelText.textContent=`POZIOM ${horde.level}`;
     const attackNames=['🏹 Łuk',...(player.stats.tripleLevel?['➶ Potrójny']:[]),...(player.stats.poisonLevel?['☠ Trucizna']:[]),...(player.stats.pierceLevel?['↠ Przebicie']:[])];
     activeAttacks.textContent=attackNames.join('  ·  ');
@@ -226,11 +233,12 @@ upgradeCards.forEach(button=>button.addEventListener('click',()=>{
     if(input.active){
       if(!player.defeated && !choosingUpgrade){
         player.update(dt,input,world,elapsed);
-        horde.update(dt,player,camera.camera);
+        if(!multiplayer.connected)horde.update(dt,player,camera.camera);
         if(horde.pendingLevelUps>0) openUpgradeChoice();
       }
     }
     multiplayer.update(dt,player.root.position,input.active&&!player.defeated&&!choosingUpgrade);
+    sharedHorde.update(dt);
     camera.update(dt);
     updateHud();
     renderer.render(world.scene,camera.camera);

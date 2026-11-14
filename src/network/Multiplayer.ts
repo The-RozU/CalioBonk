@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 
+import type {SharedEnemy} from './SharedHorde';
 type PlayerState={id:string;name:string;x:number;y:number;z:number;yaw:number};
 type Remote={root:THREE.Group;target:THREE.Vector3;yaw:number};
 type Packet=
@@ -7,6 +8,11 @@ type Packet=
   | {type:'playerJoined';player:PlayerState}
   | {type:'playerLeft';id:string}
   | {type:'move';id:string;x:number;y:number;z:number;yaw:number}
+  | {type:'enemies';enemies:SharedEnemy[];kills:number}
+  | {type:'enemyKilled';id:number;kills:number;x:number;z:number;exp:number}
+  | {type:'playerHealth';id:string;hp:number}
+  | {type:'playerDown';id:string}
+  | {type:'enemyHit';id:number;damage:number;by:string}
   | {type:'error';message:string};
 
 // GitHub Pages hosts static assets only; a production connection needs its own WSS backend.
@@ -86,6 +92,9 @@ export class Multiplayer{
   roomCode='';
   onStatus:(message:string)=>void=()=>{};
   onPresence:(players:number)=>void=()=>{};
+  onEnemies:(enemies:SharedEnemy[],kills:number)=>void=()=>{};
+  onEnemyKilled:(exp:number)=>void=()=>{};
+  onHealth:(hp:number)=>void=()=>{};
   constructor(private readonly scene:THREE.Scene){}
   get connected():boolean{return !!this.socket&&this.socket.readyState===WebSocket.OPEN&&!!this.roomCode;}
   get remoteCount():number{return this.remotes.size;}
@@ -105,7 +114,10 @@ export class Multiplayer{
   private clear():void{
     for(const remote of this.remotes.values())disposeRemote(this.scene,remote);
     this.remotes.clear();this.roomCode='';this.myId='';
-    this.onPresence(1);
+    this.onPresence(1);this.onEnemies([],0);
+  }
+  setReady(ready:boolean):void{
+    if(this.connected)this.socket?.send(JSON.stringify({type:'ready',ready}));
   }
   leave():void{
     const socket=this.socket;this.socket=null;
@@ -136,7 +148,10 @@ export class Multiplayer{
           this.onPresence(this.remotes.size+1);
           this.onStatus('Połączono! Kod pokoju: '+msg.room);
           end();
-        }else if(msg.type==='playerJoined')this.addPlayer(msg.player);
+        }else if(msg.type==='enemies')this.onEnemies(msg.enemies,msg.kills);
+        else if(msg.type==='enemyKilled')this.onEnemyKilled(msg.exp);
+        else if(msg.type==='playerHealth'&&msg.id===this.myId)this.onHealth(msg.hp);
+        else if(msg.type==='playerJoined')this.addPlayer(msg.player);
         else if(msg.type==='playerLeft')this.removePlayer(msg.id);
         else if(msg.type==='move'){
           const player=this.remotes.get(msg.id);

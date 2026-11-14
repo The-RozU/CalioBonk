@@ -37,6 +37,7 @@ try{
   const joinedOne=await created;
   assert.match(joinedOne.room,/^[A-Z2-9]{5}$/);assert.equal(joinedOne.players.length,0);
 
+  // Initial room also receives a server-owned Slime snapshot.
   const two=await open();
   const joined=wait(two,'joined'), entered=wait(one,'playerJoined');
   two.send(JSON.stringify({type:'join',room:joinedOne.room,name:'Mag'}));
@@ -47,6 +48,14 @@ try{
 
   const moving=wait(one,'move');two.send(JSON.stringify({type:'move',x:8,y:1,z:2,yaw:1.2}));
   const movement=await moving;assert.equal(movement.id,joinedTwo.playerId);assert.equal(movement.x,8);
+  // Both peers receive the same live enemy identities while playing.
+  const enemiesOne=wait(one,'enemies');
+  const enemiesTwo=wait(two,'enemies');
+  one.send(JSON.stringify({type:'ready',ready:true}));
+  two.send(JSON.stringify({type:'ready',ready:true}));
+  const [waveA,waveB]=await Promise.all([enemiesOne,enemiesTwo]);
+  assert.deepEqual(waveA.enemies.map(e=>e.id),waveB.enemies.map(e=>e.id));
+  assert.ok(waveA.enemies.length>=1);
   const leaving=wait(one,'playerLeft');two.close();
   assert.equal((await leaving).id,joinedTwo.playerId);
   console.log('OK: join, room code, remote movement and disconnect');

@@ -2,7 +2,7 @@
 
 Gra 3D w świecie Calionu, inspirowana roguelike survival games. Projekt odrębny od **Calion Survivors**.
 
-**Wersja:** 0.0.15  
+**Wersja:** 0.0.16  
 **Technologia:** Three.js + TypeScript + Vite  
 **Zakres:** eksploracja 3D z doskokiem, skaczącymi Slime'ami i automatyczną walką dystansową
 
@@ -32,7 +32,7 @@ npm run preview
 | Spacja | Skok |
 | Esc | Pauza i uwolnienie kursora |
 
-## Zakres v0.0.15
+## Zakres v0.0.16
 
 - Leśna mapa 3D z ruinami i punktem docelowym.
 - Model łucznika low-poly z łukiem, kołczanem i animacją naciągania; zachowano chód, skok i doskok.
@@ -80,7 +80,9 @@ Wykonać pomiary obu wariantów na tym samym urządzeniu przy kolejnych limitach
 
 ## Multiplayer ALFA: lokalny test dwóch graczy
 
-Prototyp synchronizuje pozycję i kierunek graczy, pojawianie się i znikanie awatarów oraz obsługuje prywatne pokoje z 5-znakowym kodem (do 4 osób). Slime’y, strzały, obrażenia, HP i EXP pozostają lokalne, NIE są jeszcze zsynchronizowane. Gra Solo działa bez serwera.
+Serwer synchronizuje pozycję i kierunek graczy oraz wspólną podstawową hordę Slime’ów (spawn, ruch, 36 HP, podstawowy atak łuku 18 obrażeń co 0,78 s, śmierć, licznik zabójstw), stan HP graczy i EXP drużyny (+5 na pokonanego Slime’a). Pokoje są prywatne (5-znakowy kod, do 4 osób). Gra Solo działa bez serwera.
+
+To PROTOTYP: obrażenia i nagrody są rozstrzygane przez serwer, ale w trybie online łuk strzela według uproszczonego bazowego tempa; specjalne ataki, poison, nowe buildy, hitboxy mapy i obrażenia wizualne nie są jeszcze zsynchronizowane. W online EXP trafia bezpośrednio do wszystkich obecnych graczy po zabójstwie, bez gwiazdek do zebrania. Nie traktuj tego jako ukończonego trybu kooperacji.
 
 Po zainstalowaniu zależności uruchom DWA terminale w katalogu repozytorium:
 
@@ -93,8 +95,8 @@ Terminal 2:
 
 Otwórz lokalny adres gry podany przez Vite w dwóch oknach przeglądarki, zwykle http://localhost:5173/CalioBonk/ . W obu kliknij GRA ZE ZNAJOMYMI · ALFA. W pierwszym utwórz pokój i skopiuj kod; w drugim dołącz tym kodem. Następnie w obu kliknij WEJDŹ DO WYPRAWY. W jednym momencie mysz może być przechwycona tylko przez jedno aktywne okno.
 
-Serwer to mała usługa Node.js z biblioteką ws, celowo ograniczona do lokalnego testu pozycji, a nie pełnej serwerowej symulacji walki. Domyślnie nasłuchuje na 127.0.0.1:2567; zmienne HOST i PORT pozwalają dostosować adres. Aby użyć innego serwera, skonfiguruj VITE_MULTIPLAYER_WS w pliku .env.local przed uruchomieniem Vite, np. VITE_MULTIPLAYER_WS=ws://127.0.0.1:2567 . NIE wystawiaj testowego serwera bezpośrednio do internetu.
+Serwer to mała usługa Node.js z biblioteką ws, obsługująca podstawowe współdzielone potwory i obrażenia (bez wszystkich umiejętności i pełnej walidacji ruchu). Domyślnie nasłuchuje na 127.0.0.1:2567; zmienne HOST i PORT pozwalają dostosować adres. Aby użyć innego serwera, skonfiguruj VITE_MULTIPLAYER_WS w pliku .env.local przed uruchomieniem Vite, np. VITE_MULTIPLAYER_WS=ws://127.0.0.1:2567 . NIE wystawiaj testowego serwera bezpośrednio do internetu.
 
-GitHub Pages nadal publikuje tylko klienta. Bez oddzielnego hostingu WSS multiplayer internetowy nie działa. Do przyszłej kooperacji trzeba przenieść wspólną symulację potworów, walki, EXP i HP na serwer, a także dodać ochronę i obsługę ponownych połączeń.
+GitHub Pages nadal publikuje tylko klienta. Bez oddzielnego hostingu WSS multiplayer internetowy nie działa. Przed publiczną kooperacją należy rozszerzyć symulację o specjalne ataki i buildy, walidację ruchu, synchronizację EXP w postaci gwiazdek, poprawne kolizje mapy, ochronę przed oszustwami oraz ponowne połączenia.
 
 Test protokołu: npm run test:multiplayer

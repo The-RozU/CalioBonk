@@ -8,7 +8,7 @@ const ARROW_DAMAGE = 18;
 const CONTACT_DAMAGE = 12;
 export type SlimeRenderMode='3d'|'sprite';
 export const SLIME_RENDER_MODE:SlimeRenderMode=new URLSearchParams(location.search).get('slime')==='3d'?'3d':'sprite';
-const slimeSpriteTexture=(()=>{
+export const slimeSpriteTexture=(()=>{
   const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;const ctx=canvas.getContext('2d')!;
   ctx.clearRect(0,0,128,128);ctx.beginPath();ctx.moveTo(17,72);ctx.quadraticCurveTo(12,42,37,32);ctx.quadraticCurveTo(62,10,91,32);ctx.quadraticCurveTo(116,47,111,76);ctx.quadraticCurveTo(105,111,65,114);ctx.quadraticCurveTo(25,111,17,72);ctx.closePath();
   ctx.fillStyle='#173a2b';ctx.fill();ctx.strokeStyle='#0a2018';ctx.lineWidth=8;ctx.stroke();
@@ -266,6 +266,7 @@ export class SlimeHorde {
   experienceRequired = 15;
   pendingLevelUps = 0;
   consumeLevelUp(): boolean { if(this.pendingLevelUps<=0)return false; this.pendingLevelUps--; return true; }
+  grantSharedExperience(amount:number):void { this.gainExperience(amount); }
   private contactCooldown = 0;
   private tripleCooldown=1.5;
   private poisonCooldown=2.8;
