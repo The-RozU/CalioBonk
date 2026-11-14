@@ -31,6 +31,8 @@ const heroHealthFill=document.querySelector<HTMLElement>('#hero-health-fill')!;
 const damageFlash=document.querySelector<HTMLElement>('#damage-flash')!;
 const gameOver=document.querySelector<HTMLElement>('#game-over')!;
 const retryButton=document.querySelector<HTMLButtonElement>('#retry-button')!;
+const upgradeScreen=document.querySelector<HTMLElement>('#upgrade-screen')!;
+const upgradeCards=[...document.querySelectorAll<HTMLButtonElement>('.upgrade-card')];
 
 try {
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -50,8 +52,46 @@ try {
   input.yaw=-.77;
   const camera=new CameraController(player,input,world);
   const clock=new THREE.Clock();
-  let elapsed=0,started=false,foundGate=false,notificationUntil=0,gameOverShown=false,lastLevel=1,levelNoticeUntil=0;
+  let elapsed=0,started=false,foundGate=false,notificationUntil=0,gameOverShown=false,lastLevel=1,levelNoticeUntil=0,choosingUpgrade=false;
   retryButton.addEventListener('click',()=>window.location.reload());
+const upgradeDefinitions:Array<{id:string,name:string,icon:string,desc:string,apply:(player:Player)=>void}>=[
+  {id:'damage',name:'Wzmocnione Strzały',icon:'➶',desc:'+20% obrażeń łuku',apply:p=>{p.stats.damage+=.2;}},
+  {id:'speed',name:'Szybkie Dłonie',icon:'⌁',desc:'+12% szybkości ataku',apply:p=>{p.stats.attackSpeed+=.12;}},
+  {id:'step',name:'Lekki Krok',icon:'➤',desc:'+10% szybkości poruszania',apply:p=>{p.stats.moveSpeed+=.1;}},
+  {id:'health',name:'Żelazna Kondycja',icon:'✚',desc:'+20 maks. HP i +20 aktualnego HP',apply:p=>{p.stats.maxHealth+=20;p.health=Math.min(p.stats.maxHealth,p.health+20);}},
+  {id:'range',name:'Sokole Oko',icon:'◎',desc:'+15% zasięgu ataku',apply:p=>{p.stats.range+=.15;}},
+  {id:'magnet',name:'Magnetyzm',icon:'✧',desc:'+25% promienia zbierania EXP',apply:p=>{p.stats.magnet+=.25;}},
+  {id:'crit',name:'Szczęśliwy Traf',icon:'✦',desc:'+8% szansy na podwójne obrażenia',apply:p=>{p.stats.criticalChance+=.08;}},
+  {id:'resolve',name:'Hart Ducha',icon:'⬟',desc:'−10% otrzymywanych obrażeń',apply:p=>{p.stats.damageReduction=Math.min(.7,p.stats.damageReduction+.1);}}
+];
+const upgradeRanks:Record<string,number>={};
+function openUpgradeChoice():void{
+  if(!horde.consumeLevelUp())return;
+  choosingUpgrade=true;
+  const available=upgradeDefinitions.filter(card=>(upgradeRanks[card.id]??0)<5).sort(()=>Math.random()-.5).slice(0,3);
+  upgradeCards.forEach((button,index)=>{
+    const card=available[index];
+    button.hidden=!card;
+    if(!card)return;
+    button.dataset.upgrade=card.id;
+    button.querySelector<HTMLElement>('.card-icon')!.textContent=card.icon;
+    button.querySelector<HTMLElement>('.card-name')!.textContent=card.name;
+    button.querySelector<HTMLElement>('.card-description')!.textContent=card.desc;
+    button.querySelector<HTMLElement>('.card-rank')!.textContent='POZIOM '+(upgradeRanks[card.id]??0)+' → '+((upgradeRanks[card.id]??0)+1);
+  });
+  upgradeScreen.classList.add('visible');
+  if(document.pointerLockElement)document.exitPointerLock();
+}
+upgradeCards.forEach(button=>button.addEventListener('click',()=>{
+  const card=upgradeDefinitions.find(item=>item.id===button.dataset.upgrade);
+  if(!card)return;
+  card.apply(player);
+  upgradeRanks[card.id]=(upgradeRanks[card.id]??0)+1;
+  document.querySelector<HTMLElement>('#build-summary')!.textContent=Object.entries(upgradeRanks).filter(([,rank])=>rank>0).map(([id,rank])=>upgradeDefinitions.find(item=>item.id===id)!.name+' '+rank).join(' · ')||'Brak';
+  if(horde.pendingLevelUps>0){openUpgradeChoice();return;}
+  choosingUpgrade=false;upgradeScreen.classList.remove('visible');void input.lock();
+}));
+
 
   const showMenu=(paused:boolean):void=>{
     menu.classList.remove('hidden');
@@ -76,7 +116,7 @@ try {
       document.body.classList.add('in-game');
       reticle.classList.add('active');
     }else{
-      showMenu(started);
+      if(!choosingUpgrade) showMenu(started);
     }
   };
   const start=async():Promise<void>=>{
@@ -107,7 +147,7 @@ try {
     expFill.style.width=`${(horde.experienceProgress/horde.experienceRequired*100).toFixed(0)}%`;
     if(horde.level>lastLevel){lastLevel=horde.level;levelNoticeUntil=elapsed+2;levelUp.classList.add('visible');}
     if(levelNoticeUntil>0&&elapsed>levelNoticeUntil){levelUp.classList.remove('visible');levelNoticeUntil=0;}
-    heroHealth.textContent=`${player.health} / 100`;
+    heroHealth.textContent=`${player.health} / ${player.stats.maxHealth}`;
     heroHealthFill.style.width=`${player.health}%`;
     if(player.health<35) heroHealthFill.classList.add('critical'); else heroHealthFill.classList.remove('critical');
     if(player.hitRecently) damageFlash.classList.add('visible'); else damageFlash.classList.remove('visible');
@@ -125,10 +165,10 @@ try {
     elapsed+=dt;
     world.update(elapsed);
     if(input.active){
-      if(!player.defeated){
+      if(!player.defeated && !choosingUpgrade){
         player.update(dt,input,world,elapsed);
         horde.update(dt,player,camera.camera);
-
+        if(horde.pendingLevelUps>0) openUpgradeChoice();
       }
     }
     camera.update(dt);

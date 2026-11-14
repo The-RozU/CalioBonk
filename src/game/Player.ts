@@ -32,6 +32,7 @@ export class Player {
   private dashRemaining = 0;
   private readonly dashDuration = 0.23;
   health = 100;
+  readonly stats={damage:1,attackSpeed:1,moveSpeed:1,maxHealth:100,range:1,magnet:1,criticalChance:0,damageReduction:0};
   private damageCooldown = 0;
   private hitFlash = 0;
   private attackTime = 0;
@@ -110,7 +111,7 @@ export class Player {
 
   takeDamage(amount:number):boolean {
     if(this.defeated || this.damageCooldown>0) return false;
-    this.health=Math.max(0,this.health-amount);
+    this.health=Math.max(0,this.health-amount*(1-this.stats.damageReduction));
     this.damageCooldown=.85;
     this.hitFlash=.28;
     return true;
@@ -120,7 +121,7 @@ export class Player {
     if (this.dashing || this.attackTime > 0) return false;
     const dx=target.x-this.root.position.x;
     const dz=target.z-this.root.position.z;
-    if (Math.hypot(dx,dz)>24) return false;
+    if (Math.hypot(dx,dz)>24*this.stats.range) return false;
     this.attackHeading=Math.atan2(-dx,-dz);
     this.attackTime=this.attackDuration;
     return true;
@@ -160,8 +161,8 @@ export class Player {
     } else {
       // Normal walking speed, with just enough damping for a natural stop.
       const damping = 1 - Math.exp(-13 * dt);
-      this.vx = THREE.MathUtils.lerp(this.vx, dx * 4.7, damping);
-      this.vz = THREE.MathUtils.lerp(this.vz, dz * 4.7, damping);
+      this.vx = THREE.MathUtils.lerp(this.vx, dx * 4.7 * this.stats.moveSpeed, damping);
+      this.vz = THREE.MathUtils.lerp(this.vz, dz * 4.7 * this.stats.moveSpeed, damping);
     }
     const xx=this.root.position.x+this.vx*dt;
     const zz=this.root.position.z+this.vz*dt;
