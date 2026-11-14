@@ -29,7 +29,7 @@ assert.match(read('src/game/Player.ts'),/this.leftArm.rotation.x=\.68\+draw\*\.3
 assert.match(read('src/game/Player.ts'),/this.rightArm.rotation.z=-draw\*\.28/);
 assert.match(read('src/game/Player.ts'),/this.rightForearm.rotation.z=-\.25-draw\*1\.45/);
 assert.match(read('src/game/Player.ts'),/this.drawArrow.visible=progress<\.58/);
-assert.match(read('src/game/Player.ts'),/grip sits at the hand/);
+assert.match(read('src/game/Player.ts'),/bow grip is centered exactly on the left hand/);
 assert.match(read('src/game/Player.ts'),/this.bow.rotation.x=-this.leftArm.rotation.x/);
 assert.match(read('src/game/Player.ts'),/full hood encloses the skull/);
 assert.match(read('index.html'),/ALFA v0\.0\.28/);
