@@ -35,7 +35,7 @@ function slimeTexture(kind:SlimeKind):THREE.Texture{
   const color=tint[kind];
   for(let i=0;i<pixels.data.length;i+=4){
     if(pixels.data[i+3]===0)continue;
-    const r=pixels.data[i],g=pixels.data[i+1],b=pixels.data[i+2];
+    const r=pixels.data[i]??0,g=pixels.data[i+1]??0,b=pixels.data[i+2]??0;
     if(g>r*1.09&&g>b*1.06){
       const strength=Math.min(1.55,Math.max(.17,(r*.3+g*.56+b*.14)/145));
       pixels.data[i]=Math.min(255,color[0]*strength);

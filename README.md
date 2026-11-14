@@ -2,7 +2,7 @@
 
 Gra 3D w świecie Calionu, inspirowana roguelike survival games. Projekt odrębny od **Calion Survivors**.
 
-**Wersja:** 0.0.20  
+**Wersja:** 0.0.21  
 **Technologia:** Three.js + TypeScript + Vite  
 **Zakres:** eksploracja 3D z doskokiem, skaczącymi Slime'ami i automatyczną walką dystansową
 
@@ -32,7 +32,7 @@ npm run preview
 | Spacja | Skok |
 | Esc | Pauza i uwolnienie kursora |
 
-## Zakres v0.0.20
+## Zakres v0.0.21
 
 - Leśna mapa 3D z ruinami i punktem docelowym.
 - Model łucznika low-poly z łukiem, kołczanem i animacją naciągania; zachowano chód, skok i doskok.
@@ -132,3 +132,5 @@ Nowe typy wprowadzane stopniowo, bez zmiany zasad multiplayer ALFA:
 - Nagrody EXP zależą od typu, także podczas scalania Gwiazd Esencji. Podczas fal 1–2 pojawiają się wyłącznie Zielone Slime’y.
 - W falach 3, 5 i 7 komunikat na ekranie sygnalizuje nowego przeciwnika. W walce Solo pozostają niezmienione bazowe ataki łucznika, stary multiplayer oraz miękka separacja Slime’ów.
 - Testy zasad i balansu typów: \`npm run test:variants\`. Testy działają również w GitHub Actions.
+
+**v0.0.21:** poprawka zgodności z rygorystycznym sprawdzaniem TypeScript przy generowaniu kolorów tekstur Slime’ów. Brak zmian w mechanikach rozgrywki.
