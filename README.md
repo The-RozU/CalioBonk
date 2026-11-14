@@ -63,16 +63,14 @@ npm run preview
 
 ## GitHub Pages i gałęzie
 
-Docelowe repozytorium: `The-RozU/CalioBonk` (osobne od `Calion Survivors`).
+Repozytorium: `The-RozU/CalioBonk`. Zmiany rozwojowe trafiają wyłącznie do `dev-mode`; `main` pozostaje bez zmian.
 
-1. Utwórz repozytorium `CalioBonk` na GitHubie. Możesz zaznaczyć utworzenie początkowego README, żeby GitHub utworzył `main`.
-2. Utwórz gałąź `dev-mode` na podstawie `main` i umieść na niej **zawartość tego folderu**. Nie kopiuj plików do `main`.
-3. Wejdź w **Settings → Pages → Build and deployment**, ustaw źródło **GitHub Actions**.
-4. Plik `.github/workflows/pages.yml` uruchomi build i wdrożenie z `dev-mode` (także przy kolejnych zmianach w tej gałęzi).
-5. Gdy workflow zakończy się sukcesem, adres gry powinien mieć postać **https://the-rozu.github.io/CalioBonk/**, jeśli GitHub Pages jest włączony i repozytorium jest publiczne.
+Workflow `.github/workflows/pages.yml` uruchamia się po zmianach na `dev-mode`: instaluje zależności, sprawdza grę, buduje `dist` i publikuje go przez GitHub Pages. Adres gry: **https://the-rozu.github.io/CalioBonk/**.
 
-Plik `vite.config.ts` ustawia docelową ścieżkę zasobów (`base: '/CalioBonk/'`), a skrypt `scripts/verify-dist.mjs` sprawdza, czy zbudowany `index.html` odwołuje się do istniejących plików CSS i JavaScript. Workflow instaluje pakiety npm, kompiluje projekt i publikuje katalog `dist`; nie publikuje surowego `index.html`.
+Do porównania wariantów użyj `?debug=1&slime=sprite` oraz `?debug=1&slime=3d`. W panelu wybierz ten sam limit hordy (25, 50, 100, 200 lub 300) i porównuj FPS oraz wywołania rysowania na tym samym urządzeniu.
 
-## Kolejny etap
+Plik `vite.config.ts` ustawia ścieżkę zasobów (`base: '/CalioBonk/'`), a `scripts/verify-dist.mjs` sprawdza, czy zbudowany `index.html` odwołuje się do istniejących plików CSS i JavaScript.
 
-W kolejnej wersji: rozwój postaci i zdobywanie doświadczenia.
+## Dalsze prace
+
+Wykonać pomiary obu wariantów na tym samym urządzeniu przy kolejnych limitach hordy, a następnie dostroić renderowanie i gęstość przeciwników na podstawie odczytów FPS oraz wywołań rysowania.
