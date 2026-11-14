@@ -2,7 +2,7 @@
 
 Gra 3D w świecie Calionu, inspirowana roguelike survival games. Projekt odrębny od **Calion Survivors**.
 
-**Wersja:** 0.0.13  
+**Wersja:** 0.0.14  
 **Technologia:** Three.js + TypeScript + Vite  
 **Zakres:** eksploracja 3D z doskokiem, skaczącymi Slime'ami i automatyczną walką dystansową
 
@@ -32,7 +32,7 @@ npm run preview
 | Spacja | Skok |
 | Esc | Pauza i uwolnienie kursora |
 
-## Zakres v0.0.13
+## Zakres v0.0.14
 
 - Leśna mapa 3D z ruinami i punktem docelowym.
 - Model łucznika low-poly z łukiem, kołczanem i animacją naciągania; zachowano chód, skok i doskok.
@@ -44,7 +44,9 @@ npm run preview
 - Automatyczne strzały zadające 18 obrażeń co 0,78 s (2 trafienia do pokonania Slime'a).
 - Bohater ma 100 HP; kontakt ze Slime'em zadaje 12 obrażeń z sygnalizacją trafienia i krótkim cooldownem.
 - Przy 0 HP pojawia się ekran końca wyprawy z przyciskiem ponownego startu.
-- Każdy pokonany Slime pozostawia widoczny kryształ wart 5 EXP; kryształy przyciągają się do gracza.
+- Pokonane Slime’y upuszczają Gwiazdy Esencji (sprite’y); każda warta jest 5 EXP. Gwiazdki pulsują, obracają się i przyciągają się do gracza.
+- Przy scalaniu pobliskich gwiazdek zwiększa się wartość i zmienia ich odcień (zielony od 25 EXP, złoty od 100 EXP); EXP nie przepada.
+- Gwiazdki współdzielą jedną proceduralną teksturę/material i są ponownie wykorzystywane przez pulę obiektów.
 - Bohater zaczyna na poziomie 1; wymagania kolejnych poziomów wynoszą 15, 30, 45 EXP, a następnie rosną o 15.
 - HUD pokazuje poziom, postęp EXP i krótki efekt awansu.
 - Awans zatrzymuje wyprawę i wyświetla trzy różne karty; wybór jednej wznawia grę, a kolejne awanse są kolejkowane.

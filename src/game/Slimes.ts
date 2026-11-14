@@ -205,7 +205,38 @@ class Slime {
 }
 
 type StrikeEffect = { mesh: THREE.Mesh<THREE.TorusGeometry, THREE.MeshBasicMaterial>; age: number };
-type ExperienceGem = { root: THREE.Group; age: number; baseY: number; value: number };
+type ExperienceGem = { root: THREE.Sprite; age: number; baseY: number; value: number; attracted: boolean };
+
+// Shared transparent atlas for all collectible Essence Stars (no per-drop geometry or textures).
+// A four-point silhouette with soft emerald glow stays legible in large hordes.
+const essenceStarTexture=(()=>{
+  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;
+  const ctx=canvas.getContext('2d')!;
+  const aura=ctx.createRadialGradient(64,64,5,64,64,58);
+  aura.addColorStop(0,'rgba(235,255,223,.95)');
+  aura.addColorStop(.2,'rgba(115,245,166,.65)');
+  aura.addColorStop(.6,'rgba(47,182,113,.19)');
+  aura.addColorStop(1,'rgba(27,125,73,0)');
+  ctx.fillStyle=aura;ctx.fillRect(0,0,128,128);
+  const star=(radius:number,inner:number)=>{
+    ctx.beginPath();
+    for(let i=0;i<8;i++){
+      const angle=i*Math.PI/4-Math.PI/2;
+      const r=i%2===0?radius:inner;
+      const x=64+Math.cos(angle)*r,y=64+Math.sin(angle)*r;
+      if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+  };
+  star(36,7);ctx.fillStyle='#b4ffcf';ctx.shadowColor='#65ed9c';ctx.shadowBlur=11;ctx.fill();
+  star(24,4);ctx.fillStyle='#f8fff1';ctx.shadowBlur=4;ctx.fill();
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+  texture.minFilter=THREE.LinearFilter;texture.magFilter=THREE.LinearFilter;
+  return texture;
+})();
+const essenceStarMaterial=new THREE.SpriteMaterial({
+  map:essenceStarTexture,transparent:true,depthWrite:false,depthTest:true,
+});
 type ArrowFlight = { mesh: THREE.Group; target: Slime; age: number; damage:number; criticalChance:number; kind:AttackKind; pierce:number; hit:Set<Slime> };
 
 function makeArrow(kind:AttackKind='bow'): THREE.Group {
@@ -226,6 +257,7 @@ export class SlimeHorde {
   private maxAlive=6;
   private readonly maxDamageNumbers=24;
   private readonly experienceGems: ExperienceGem[] = [];
+  private readonly essenceStarPool: THREE.Sprite[] = [];
   experience = 0;
   level = 1;
   experienceProgress = 0;
@@ -304,19 +336,26 @@ export class SlimeHorde {
     const texture=new THREE.CanvasTexture(canvas);const material=new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:false});const sprite=new THREE.Sprite(material);sprite.position.copy(enemy.position).add(new THREE.Vector3(0,1.8,0));sprite.scale.set(1.1,.55,1);this.world.scene.add(sprite);this.damageNumbers.push({sprite,age:0});
   }
 
+  private styleExperienceStar(pickup:ExperienceGem):void {
+    const value=pickup.value;
+    // Color encodes stacked EXP without needing extra textures or materials.
+    pickup.root.color.set(value>=100?'#ffe8a5':value>=25?'#8fffb6':'#ffffff');
+    const size=value>=100?1.1:value>=25?.83:.64;
+    pickup.root.scale.setScalar(size);
+  }
+
   private dropExperience(enemy: Slime): void {
-    const close=this.experienceGems.find(item=>item.root.position.distanceTo(enemy.position)<1.5);
-    if(close){close.value+=5;close.root.scale.setScalar(Math.min(1.8,1+close.value*.025));return;}
-    const root=new THREE.Group();
-    const gem=new THREE.Mesh(new THREE.OctahedronGeometry(.22,0),new THREE.MeshStandardMaterial({color:'#8de1b1',emissive:'#2b9b66',emissiveIntensity:1.2,metalness:.35,roughness:.25}));
-    gem.rotation.z=Math.PI/4;
-    root.add(gem);
-    const glow=new THREE.Mesh(new THREE.OctahedronGeometry(.34,0),new THREE.MeshBasicMaterial({color:'#71e5ae',wireframe:true,transparent:true,opacity:.45,depthWrite:false}));
-    root.add(glow);
+    const close=this.experienceGems.find(item=>item.root.position.distanceTo(enemy.position)<1.5 && !item.attracted);
+    if(close){close.value+=5;this.styleExperienceStar(close);return;}
+    const root=this.essenceStarPool.pop()??new THREE.Sprite(essenceStarMaterial);
+    root.name='Gwiazda Esencji';
     root.position.copy(enemy.position);
-    root.position.y+=.45;
+    root.position.y+=.4;
+    root.rotation.set(0,0,0);
+    const pickup:ExperienceGem={root,age:0,baseY:root.position.y,value:5,attracted:false};
+    this.styleExperienceStar(pickup);
     this.world.scene.add(root);
-    this.experienceGems.push({root,age:0,baseY:root.position.y,value:5});
+    this.experienceGems.push(pickup);
   }
 
   private gainExperience(amount:number): void {
@@ -386,18 +425,23 @@ export class SlimeHorde {
     for(let i=this.experienceGems.length-1;i>=0;i--){
       const pickup=this.experienceGems[i]!;
       pickup.age+=dt;
-      pickup.root.rotation.y+=dt*1.6;
-      pickup.root.position.y=pickup.baseY+Math.sin(pickup.age*2.8)*.12;
+      pickup.root.material.rotation=0;
+      pickup.root.rotation.z+=dt*.55;
+      const pulse=1+Math.sin(pickup.age*5.2)*.09;
+      const baseSize=pickup.value>=100?1.1:pickup.value>=25?.83:.64;
+      pickup.root.scale.set(baseSize*pulse,baseSize*pulse,1);
+      if(!pickup.attracted) pickup.root.position.y=pickup.baseY+Math.sin(pickup.age*2.8)*.1;
       const dx=hero.x-pickup.root.position.x,dy=hero.y+1-pickup.root.position.y,dz=hero.z-pickup.root.position.z;
       const distance=Math.hypot(dx,dy,dz);
-      if(distance<5*player.stats.magnet){
-        const pull=Math.min(1,dt*4.5);
+      if(distance<5*player.stats.magnet)pickup.attracted=true;
+      if(pickup.attracted){
+        const pull=Math.min(1,dt*7.5);
         pickup.root.position.x+=dx*pull;pickup.root.position.y+=dy*pull;pickup.root.position.z+=dz*pull;
       }
       if(distance<.85){
         this.gainExperience(pickup.value);
         this.world.scene.remove(pickup.root);
-        pickup.root.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});
+        if(this.essenceStarPool.length<500)this.essenceStarPool.push(pickup.root);
         this.experienceGems.splice(i,1);
       }
     }

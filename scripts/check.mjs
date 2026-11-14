@@ -14,7 +14,7 @@ const required=[
 ];
 for(const path of required) assert(existsSync(join(root,path)),`Brakuje pliku: ${path}`);
 const pkg=JSON.parse(read('package.json'));
-assert.equal(pkg.version,'0.0.13','Nieprawidłowa wersja gry');
+assert.equal(pkg.version,'0.0.14','Nieprawidłowa wersja gry');
 assert.match(read('src/game/Input.ts'),/requestPointerLock/);
 assert.match(read('src/game/Player.ts'),/ShiftLeft/);
 assert.match(read('src/game/Player.ts'),/dashCooldown/);
@@ -63,6 +63,9 @@ assert.match(read('src/game/Slimes.ts'),/showDamage/);
 assert.match(read('src/main.ts'),/attack-triple/);
 assert.match(read('src/main.ts'),/activeAttacks/);
 assert.match(read('src/game/Slimes.ts'),/gainExperience/);
+assert.match(read('src/game/Slimes.ts'),/Gwiazda Esencji/);
+assert.match(read('src/game/Slimes.ts'),/essenceStarPool/);
+assert.match(read('src/game/Slimes.ts'),/essenceStarMaterial/);
 assert.match(read('src/game/Slimes.ts'),/experienceRequired=15\*this.level/);
 assert.match(read('src/main.ts'),/hero-exp-fill/);
 assert.match(read('index.html'),/level-up/);
