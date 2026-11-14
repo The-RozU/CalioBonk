@@ -34,6 +34,8 @@ const retryButton=document.querySelector<HTMLButtonElement>('#retry-button')!;
 const upgradeScreen=document.querySelector<HTMLElement>('#upgrade-screen')!;
 const upgradeCards=[...document.querySelectorAll<HTMLButtonElement>('.upgrade-card')];
 const activeAttacks=document.querySelector<HTMLElement>('#active-attacks')!;
+const performanceOverlay=document.querySelector<HTMLElement>('#performance-overlay')!;
+const performanceText=document.querySelector<HTMLElement>('#performance-values')!;
 
 try {
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -54,6 +56,9 @@ try {
   const camera=new CameraController(player,input,world);
   const clock=new THREE.Clock();
   let elapsed=0,started=false,foundGate=false,notificationUntil=0,gameOverShown=false,lastLevel=1,levelNoticeUntil=0,choosingUpgrade=false;
+  const debugEnabled=new URLSearchParams(location.search).get('debug')==='1';
+  performanceOverlay.hidden=!debugEnabled;
+  let fpsFrames=0,fpsElapsed=0,fpsValue=0;
   retryButton.addEventListener('click',()=>window.location.reload());
 const upgradeDefinitions:Array<{id:string,name:string,icon:string,desc:string,apply:(player:Player)=>void}>=[
   {id:'damage',name:'Wzmocnione Strzały',icon:'➶',desc:'+20% obrażeń łuku',apply:p=>{p.stats.damage+=.2;}},
@@ -167,8 +172,12 @@ upgradeCards.forEach(button=>button.addEventListener('click',()=>{
 
   function frame():void {
     requestAnimationFrame(frame);
-    const dt=Math.min(clock.getDelta(),.045);
+    const rawDt=clock.getDelta();
+    const dt=Math.min(rawDt,.045);
     elapsed+=dt;
+    fpsFrames++;fpsElapsed+=rawDt;
+    if(fpsElapsed>=.5){fpsValue=Math.round(fpsFrames/fpsElapsed);fpsFrames=0;fpsElapsed=0;}
+    if(debugEnabled) performanceText.textContent='FPS '+fpsValue+' · WROGOWIE '+horde.alive+' · POCISKI '+horde.projectileCount+' · EFEKTY '+horde.effectCount+' · EXP '+horde.crystalCount+' · DRAW '+renderer.info.render.calls;
     world.update(elapsed);
     if(input.active){
       if(!player.defeated && !choosingUpgrade){

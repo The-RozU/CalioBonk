@@ -58,27 +58,26 @@ class Slime {
       emissive: '#225d32', emissiveIntensity: .38,
       roughness: .38, metalness: .03, flatShading: true,
     });
-    this.jelly = addPart(this.body, new THREE.IcosahedronGeometry(.76, 1), skin, 0, .71, 0) as typeof this.jelly;
-    this.jelly.scale.set(1.03, .83, .91);
+    this.jelly = addPart(this.body, new THREE.SphereGeometry(.66,8,6), skin, 0, .71, 0) as typeof this.jelly;
+    this.jelly.scale.set(1.05, .72, 1.0);
     const darker = new THREE.MeshStandardMaterial({color: '#306d49', roughness: .55, flatShading: true});
     const pale = new THREE.MeshStandardMaterial({color: '#e8e8b9', emissive: '#3b5340', roughness: .4});
     const pupil = new THREE.MeshStandardMaterial({color: '#101d19', roughness: .3});
     for (const side of [-1, 1]) {
       addPart(this.body, new THREE.IcosahedronGeometry(.15, 0), pale, side * .26, .94, -.58);
       addPart(this.body, new THREE.SphereGeometry(.075, 6, 4), pupil, side * .26, .94, -.72);
-      addPart(this.body, new THREE.IcosahedronGeometry(.18, 0), skin.clone(), side * .48, 1.13, .13);
     }
     const mouth = addPart(this.body, new THREE.BoxGeometry(.25, .055, .07), darker, 0, .67, -.67);
     mouth.rotation.z = -.05;
 
     const barBack = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.3, .18),
+      new THREE.PlaneGeometry(.9, .13),
       new THREE.MeshBasicMaterial({color: '#13241b', side: THREE.DoubleSide, depthTest: false}),
     );
-    this.healthBar.position.set(0, 1.8, 0);
+    this.healthBar.position.set(0, .98, 0);
     this.healthBar.add(barBack);
     this.healthFill = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.22, .105),
+      new THREE.PlaneGeometry(.82, .08),
       new THREE.MeshBasicMaterial({color: '#9ce88e', side: THREE.DoubleSide, depthTest: false}),
     );
     this.healthFill.position.z = .015;
@@ -87,7 +86,7 @@ class Slime {
     this.root.add(this.healthBar);
 
     this.shadow = new THREE.Mesh(
-      new THREE.CircleGeometry(.73, 16),
+      new THREE.CircleGeometry(.4, 16),
       new THREE.MeshBasicMaterial({color: '#07150d', transparent: true, opacity: .33, depthWrite: false}),
     );
     this.shadow.rotation.x = -Math.PI / 2;
@@ -106,7 +105,7 @@ class Slime {
     this.healthBar.visible = true;
     const fraction = this.health / MAX_HEALTH;
     this.healthFill.scale.x = fraction;
-    this.healthFill.position.x = -(1 - fraction) * .61;
+    this.healthFill.position.x = -(1 - fraction) * .41;
     if (this.health === 0) {
       this.dead = true;
       return true;
@@ -145,8 +144,8 @@ class Slime {
         const speed = 3.0 + this.variation * .7;
         const nextX = this.root.position.x + this.direction.x * speed * dt;
         const nextZ = this.root.position.z + this.direction.y * speed * dt;
-        if (!world.collides(nextX, this.root.position.z, .43)) this.root.position.x = nextX;
-        if (!world.collides(this.root.position.x, nextZ, .43)) this.root.position.z = nextZ;
+        if (!world.collides(nextX, this.root.position.z, .24)) this.root.position.x = nextX;
+        if (!world.collides(this.root.position.x, nextZ, .24)) this.root.position.z = nextZ;
       }
       this.verticalSpeed -= 17.5 * dt;
       this.height += this.verticalSpeed * dt;
@@ -161,7 +160,7 @@ class Slime {
     this.root.position.y = ground + this.height;
     const rise = this.height > .01 ? Math.min(this.height / 1.0, 1) : 0;
     const squash = this.height < .01 ? Math.max(0, 1 - Math.max(this.jumpDelay, 0) * 2.5) : 0;
-    this.body.scale.set(1 + squash * .06 - rise * .08, 1 - squash * .08 + rise * .12, 1 + squash * .06 - rise * .08);
+    this.body.scale.set(.52 * (1 + squash * .13 - rise * .13), .42 * (1 - squash * .16 + rise * .22), .52 * (1 + squash * .13 - rise * .13));
     this.root.scale.setScalar(Math.min(1, this.age * 5));
     this.healthBar.quaternion.copy(this.root.quaternion).invert().multiply(camera.quaternion);
     this.shadow.position.set(this.root.position.x, ground + .025, this.root.position.z);
@@ -223,6 +222,9 @@ export class SlimeHorde {
   constructor(private readonly world: World) {}
 
   get alive(): number { return this.enemies.filter(enemy => !enemy.dead).length; }
+  get projectileCount():number { return this.arrows.length; }
+  get effectCount():number { return this.effects.length+this.damageNumbers.length; }
+  get crystalCount():number { return this.experienceGems.length; }
 
   private random(): number {
     this.seed = (Math.imul(this.seed, 1664525) + 1013904223) >>> 0;
@@ -324,7 +326,7 @@ export class SlimeHorde {
         this.arrows.splice(i,1); continue;
       }
       const origin=flight.mesh.position;
-      const aimPosition=flight.target.position.clone().add(new THREE.Vector3(0,.72,0));
+      const aimPosition=flight.target.position.clone().add(new THREE.Vector3(0,.4,0));
       const direction=aimPosition.clone().sub(origin).normalize();
       flight.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);
       const step=22*dt;
@@ -343,7 +345,7 @@ export class SlimeHorde {
       }
     }
     if(this.contactCooldown<=0 && !player.defeated){
-      const touching=this.enemies.some(enemy=>!enemy.dead && Math.hypot(enemy.position.x-hero.x,enemy.position.z-hero.z)<1.35);
+      const touching=this.enemies.some(enemy=>!enemy.dead && Math.hypot(enemy.position.x-hero.x,enemy.position.z-hero.z)<.9);
       if(touching && player.takeDamage(CONTACT_DAMAGE)) this.contactCooldown=.24;
     }
     for(let i=this.experienceGems.length-1;i>=0;i--){
@@ -383,7 +385,7 @@ export class SlimeHorde {
       if (closest && player.startAttack(closest.position)) {
         this.cooldown = .78/player.stats.attackSpeed;
         const arrow=makeArrow('bow');
-        arrow.position.copy(hero).add(new THREE.Vector3(0,1.45,0));
+        arrow.position.copy(hero).add(new THREE.Vector3(0,1.25,0));
         const direction=closest.position.clone().add(new THREE.Vector3(0,.72,0)).sub(arrow.position).normalize();
         arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);
         this.world.scene.add(arrow);
