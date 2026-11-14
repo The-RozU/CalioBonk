@@ -2,7 +2,7 @@
 
 Gra 3D w świecie Calionu, inspirowana roguelike survival games. Projekt odrębny od **Calion Survivors**.
 
-**Wersja:** 0.0.26  
+**Wersja:** 0.0.27  
 **Technologia:** Three.js + TypeScript + Vite  
 **Zakres:** eksploracja 3D z doskokiem, skaczącymi Slime'ami i automatyczną walką dystansową
 
@@ -32,7 +32,7 @@ npm run preview
 | Spacja | Skok |
 | Esc | Pauza i uwolnienie kursora |
 
-## Zakres v0.0.26
+## Zakres v0.0.27
 
 - Leśna mapa 3D z ruinami i punktem docelowym.
 - Model łucznika low-poly z łukiem, kołczanem i animacją naciągania; zachowano chód, skok i doskok.
@@ -153,3 +153,5 @@ Nowe typy wprowadzane stopniowo, bez zmiany zasad multiplayer ALFA:
 - Kompensowanie obrotu ramienia utrzymuje łuk pionowo przy chodzeniu, doskoku i naciąganiu. Zmniejszono średnicę ramion łuku i cięciwy.
 - Poprawiono pozę spoczynkową i animację strzału. Bez zmian mechaniki celowania, hitboxa, statystyk ani zasobów multiplayer.
 - Test statyczny kontroluje osadzenie broni i animacji, a kompilacja TypeScript/Vite w GitHub Actions sprawdza zgodność kodu.
+
+**v0.0.27:** skrypt kontroli automatycznie porównuje numer wersji w HUD z `package.json`, bez wpisywania kolejnego numeru na sztywno. Poprawki modelu z v0.0.26 bez zmian.

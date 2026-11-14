@@ -16,7 +16,7 @@ const required=[
 ];
 for(const path of required) assert(existsSync(join(root,path)),`Brakuje pliku: ${path}`);
 const pkg=JSON.parse(read('package.json'));
-assert.equal(pkg.version,'0.0.26','Nieprawidłowa wersja gry');
+assert.equal(pkg.version,'0.0.27','Nieprawidłowa wersja gry');
 assert.match(read('src/game/Input.ts'),/requestPointerLock/);
 assert.match(read('src/game/Player.ts'),/ShiftLeft/);
 assert.match(read('src/game/Player.ts'),/dashCooldown/);
@@ -118,7 +118,7 @@ assert.match(read('index.html'),/mp-create/);
 assert.match(read('index.html'),/mp-join/);
 assert.match(read('.github/workflows/pages.yml'),/branches: \[dev-mode\]/);
 const html=read('index.html');
-assert.match(html,/ALFA v0\.0\.25/);
+assert.ok(html.includes(`ALFA v${pkg.version}`),'Wersja w HUD nie zgadza się z package.json');
 const code=read('src/main.ts');
 for(const match of code.matchAll(/querySelector<[^>]+>\('#([^']+)'\)/g)) {
   assert(html.includes(`id="${match[1]}"`),`Brakuje elementu HTML #${match[1]}`);
