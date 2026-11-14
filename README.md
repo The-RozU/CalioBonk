@@ -27,7 +27,7 @@ npm run preview
 | Klawisz | Akcja |
 | --- | --- |
 | W / A / S / D | Ruch względem kamery |
-| Mysz | Obrót kamery; kółko przybliża i oddala widok |
+| Mysz | Obrót kamery; kółko przybliża i oddala widok (do ok. 14 m) |
 | Shift (naciśnięcie) | Krótki doskok w kierunku ruchu (1,4 s odnowienia) |
 | Spacja | Skok |
 | Esc | Pauza i uwolnienie kursora |

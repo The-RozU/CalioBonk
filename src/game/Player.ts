@@ -205,8 +205,8 @@ export class Player {
     this.leftArm.rotation.z=0;
     if(this.attackTime>0){
       const progress=1-this.attackTime/this.attackDuration;
-      this.leftArm.rotation.x=-.72;
-      this.rightArm.rotation.x=-.2-Math.sin(progress*Math.PI)*.2;
+      this.leftArm.rotation.x=.95;
+      this.rightArm.rotation.x=.62-Math.sin(progress*Math.PI)*.18;
       this.rightArm.rotation.z=.05+Math.sin(progress*Math.PI)*.08;
     }
     this.body.position.y=(this.airborne?0:Math.abs(Math.sin(this.animTime))*walk*.05) + Math.sin(elapsed*1.9)*.01;

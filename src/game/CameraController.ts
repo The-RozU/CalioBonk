@@ -18,7 +18,7 @@ export class CameraController {
     window.addEventListener('wheel',(event)=>{
       if(!this.input.active) return;
       event.preventDefault();
-      this.distance=THREE.MathUtils.clamp(this.distance+Math.sign(event.deltaY)*.7,3.2,10.5);
+      this.distance=THREE.MathUtils.clamp(this.distance+Math.sign(event.deltaY)*.7,3.2,14);
     },{passive:false});
     this.update(1);
   }
