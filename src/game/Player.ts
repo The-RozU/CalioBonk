@@ -58,12 +58,14 @@ export class Player {
     mesh(new THREE.BoxGeometry(.75,.84,.46),armor,this.body,0,1.34,0);
     mesh(new THREE.BoxGeometry(.51,.12,.50),trim,this.body,0,1.04,0);
     mesh(new THREE.SphereGeometry(.245,7,5),skin,this.body,0,1.98,-.02);
-    mesh(new THREE.ConeGeometry(.42,.68,7),hood,this.body,0,2.19,.08);
+    mesh(new THREE.ConeGeometry(.32,.43,7),hood,this.body,0,2.12,.08);
     // A narrow band of dark visor keeps the face visible against the hood.
     mesh(new THREE.BoxGeometry(.33,.105,.08),leather,this.body,0,1.98,-.235);
-    // Cloak, raised slightly behind the shoulders (negative Z is front).
-    const cloak=mesh(new THREE.ConeGeometry(.68,1.5,4,1,true),cloth,this.body,0,1.02,.21);
-    cloak.rotation.y=Math.PI/4;
+    // Short field mantle leaves the belt and legs clearly visible.
+    mesh(new THREE.BoxGeometry(.78,.58,.12),cloth,this.body,0,.68,.31);
+    // Utility belt and a small metal clasp.
+    mesh(new THREE.BoxGeometry(.88,.13,.52),leather,this.body,0,.91,0);
+    mesh(new THREE.BoxGeometry(.13,.16,.08),trim,this.body,0,.91,-.28);
     mesh(new THREE.BoxGeometry(.14,.16,.16),trim,this.body,-.39,1.51,-.05);
     mesh(new THREE.BoxGeometry(.14,.16,.16),trim,this.body,.39,1.51,-.05);
 
@@ -82,7 +84,7 @@ export class Player {
       mesh(new THREE.BoxGeometry(.23,.2,.23),skin,arm,0,-.73,0);
     }
     // Low-poly hunting bow in the left hand and a visible quiver on the back.
-    const bow = new THREE.Group(); bow.position.set(0,-.72,-.12); this.leftArm.add(bow);
+    const bow = new THREE.Group(); bow.position.set(0,-.72,-.2); bow.rotation.z=-.08; this.leftArm.add(bow);
     const woodBow=material('#8c6339',.2), string=material('#d8ceb0');
     const bowCurve=new THREE.CubicBezierCurve3(
       new THREE.Vector3(0,.62,0),new THREE.Vector3(.48,.52,0),
@@ -95,9 +97,14 @@ export class Player {
     for(let i=0;i<3;i++){
       const shaft=mesh(new THREE.CylinderGeometry(.012,.012,.56,4),iron,this.body,.3+i*.045,1.56,.31);
       shaft.rotation.z=-.08;
+      mesh(new THREE.BoxGeometry(.07,.09,.035),material('#a65c3d'),this.body,.3+i*.045,1.79,.31);
     }
-    this.leftArm.rotation.x=-.72;
-    this.rightArm.rotation.x=-.45;
+    // Bracer on the bow arm reads as practical field gear.
+    mesh(new THREE.BoxGeometry(.34,.29,.39),leather,this.leftArm,0,-.47,-.02);
+    mesh(new THREE.BoxGeometry(.36,.08,.41),trim,this.leftArm,0,-.35,-.02);
+    // Both hands stay forward; the bow sits in the left hand, ready to aim.
+    this.leftArm.rotation.x=.28;
+    this.rightArm.rotation.x=.22;
 
     this.scene.add(this.root);
     const shadowMaterial=new THREE.MeshBasicMaterial({color:'#101715',transparent:true,opacity:.3,depthWrite:false});
@@ -201,19 +208,20 @@ export class Player {
     const swing=Math.sin(this.animTime)*.62*walk;
     this.leftLeg.rotation.x=this.dashing?-.44:this.airborne?-.15:swing;
     this.rightLeg.rotation.x=this.dashing?.52:this.airborne?.28:-swing;
-    this.leftArm.rotation.x=this.dashing?-.68:this.airborne?-.28:-swing*.5;
-    this.rightArm.rotation.x=this.dashing?-.72:this.airborne?-.2:swing*.12-.45;
+    this.leftArm.rotation.x=this.dashing?-.22:this.airborne?.05:.28-swing*.12;
+    this.rightArm.rotation.x=this.dashing?-.3:this.airborne?.08:.22+swing*.08;
     this.rightArm.rotation.z=0;
     this.leftArm.rotation.z=0;
     if(this.attackTime>0){
       const progress=1-this.attackTime/this.attackDuration;
-      this.leftArm.rotation.x=.95;
-      this.rightArm.rotation.x=.62-Math.sin(progress*Math.PI)*.18;
-      this.rightArm.rotation.z=.05+Math.sin(progress*Math.PI)*.08;
+      // Keep the bow arm extended while the other hand draws toward the chest.
+      this.leftArm.rotation.x=.28;
+      this.rightArm.rotation.x=.22-Math.sin(progress*Math.PI)*.62;
+      this.rightArm.rotation.z=.04+Math.sin(progress*Math.PI)*.12;
     }
     this.body.position.y=(this.airborne?0:Math.abs(Math.sin(this.animTime))*walk*.05) + Math.sin(elapsed*1.9)*.01;
     this.body.rotation.z=Math.sin(this.animTime)*.028*walk;
-    this.body.rotation.x=THREE.MathUtils.lerp(this.body.rotation.x,this.dashing?-.33:0,1-Math.exp(-17*dt));
+    this.body.rotation.x=THREE.MathUtils.lerp(this.body.rotation.x,this.dashing?-.33:-.055,1-Math.exp(-17*dt));
 
     this.shadow.position.set(this.root.position.x,ground+.035,this.root.position.z);
     const height=this.root.position.y-ground;
