@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b100e" />
+    <meta name="description" content="CalioBonk. Prototyp mrocznej gry survival 3D w świecie Calionu." />
+    <title>CalioBonk | v0.0.3</title>
+  </head>
+  <body>
+    <div id="app">
+      <div id="viewport" aria-label="Trójwymiarowy świat Calionu"></div>
+      <div class="vignette" aria-hidden="true"></div>
+      <div class="grain" aria-hidden="true"></div>
+
+      <header class="hud-top">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">C</div>
+          <div class="brand-copy"><strong>CALIO<span>BONK</span></strong><small>POGRANICZE · POLIGON BOHATERA</small></div>
+        </div>
+        <div class="hud-right">
+          <span class="stage-label"><span class="live-dot"></span> PROTOTYP 3D</span>
+          <span class="version">ALFA v0.0.3</span>
+        </div>
+      </header>
+
+      <div class="goal" id="goal" aria-live="polite">
+        <div class="goal-icon">✦</div>
+        <div class="goal-copy"><small>CEL EKSPLORACJI</small><strong>Odnajdź starą bramę</strong><span id="goal-distance">Podążaj ku ruinom</span></div>
+      </div>
+
+      <div id="reticle" class="reticle" aria-hidden="true"><span></span></div>
+
+      <div class="hud-bottom">
+        <section class="status-panel">
+          <span class="status-rune">◈</span>
+          <div class="status-details"><small>ODKRYWCA POGRANICZA</small><strong id="movement-state">Gotowy do wyprawy</strong><small id="dash-status">Doskok · gotowy</small><div class="velocity"><div id="velocity-fill"></div></div></div>
+        </section>
+        <nav class="key-hints" aria-label="Sterowanie">
+          <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Ruch</span></div>
+          <div><kbd>SHIFT</kbd><span>Doskok</span></div>
+          <div><kbd>SPACJA</kbd><span>Skok</span></div>
+          <div><span class="mouse-glyph">◉</span><span>Kamera</span></div>
+          <div><kbd>ESC</kbd><span>Pauza</span></div>
+        </nav>
+      </div>
+
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+      <div id="menu" class="menu-scrim" role="dialog" aria-modal="true" aria-labelledby="menu-title">
+        <div class="menu-panel">
+          <div class="crest" aria-hidden="true"><div class="crest-inner">C</div></div>
+          <p class="eyebrow">PIERWSZA WYPRAWA · PROTOTYP v0.0.3</p>
+          <h1 id="menu-title">CALIO<span>BONK</span></h1>
+          <div class="title-divider"><span></span>✦<span></span></div>
+          <p id="menu-desc" class="menu-desc">Na krańcu Calionu stoją zapomniane ruiny. Postaw pierwsze kroki w świecie, który dopiero budzi się do życia.</p>
+          <button id="start-button" class="start-button" type="button"><span id="start-label">ROZPOCZNIJ EKSPLORACJĘ</span><span aria-hidden="true">➜</span></button>
+          <div class="menu-controls"><span>WASD · PORUSZANIE</span><i></i><span>MYSZ · KAMERA</span><i></i><span>SHIFT · DOSKOK</span><i></i><span>SPACJA · SKOK</span></div>
+          <p class="menu-tip" id="menu-tip">Po rozpoczęciu kliknij Esc, aby zatrzymać grę i uwolnić kursor.</p>
+        </div>
+        <div class="menu-footer"><span>CALION UNIVERSE</span><span>THREE.JS / TYPESCRIPT</span></div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
