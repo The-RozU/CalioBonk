@@ -58,13 +58,14 @@ export class Player {
     mesh(new THREE.CylinderGeometry(.36,.48,.86,7),cloth,this.body,0,.84,0);
     mesh(new THREE.BoxGeometry(.75,.84,.46),armor,this.body,0,1.34,0);
     mesh(new THREE.BoxGeometry(.51,.12,.50),trim,this.body,0,1.04,0);
-    mesh(new THREE.SphereGeometry(.205,8,6),skin,this.body,0,1.99,-.11);
-    // Rounded hood cap sits behind the face instead of forming a pointed helmet.
-    const hoodCap=mesh(new THREE.SphereGeometry(.27,8,5,0,Math.PI*2,0,Math.PI*.56),hood,this.body,0,2.04,.08);
-    hoodCap.scale.set(1.14,1.12,1);
-    // Simple brow and eye slit make the face readable at game distance.
-    mesh(new THREE.BoxGeometry(.31,.07,.065),leather,this.body,0,2.01,-.287);
-    mesh(new THREE.BoxGeometry(.16,.025,.025),trim,this.body,0,2.005,-.326);
+    mesh(new THREE.CylinderGeometry(.12,.14,.22,6),leather,this.body,0,1.82,-.015);
+    mesh(new THREE.SphereGeometry(.18,8,6),skin,this.body,0,2.01,-.12);
+    // A compact cloth hood frames the face from behind without a tall crown.
+    const hoodCap=mesh(new THREE.SphereGeometry(.215,8,5,0,Math.PI*2,0,Math.PI*.5),hood,this.body,0,2.11,.105);
+    hoodCap.scale.set(1.02,.72,.9);
+    // A narrow brow and eye slit keep the face readable at game distance.
+    mesh(new THREE.BoxGeometry(.28,.055,.055),leather,this.body,0,2.02,-.276);
+    mesh(new THREE.BoxGeometry(.14,.022,.025),trim,this.body,0,2.015,-.306);
     // Short field mantle leaves the belt and legs clearly visible.
     mesh(new THREE.BoxGeometry(.78,.58,.12),cloth,this.body,0,.68,.31);
     // Utility belt and a small metal clasp.
@@ -90,12 +91,14 @@ export class Player {
     // Low-poly hunting bow in the left hand and a visible quiver on the back.
     this.bow.position.set(0,-.72,-.2); this.bow.rotation.z=-.08; this.leftArm.add(this.bow);
     const woodBow=material('#8c6339',.2), string=material('#d8ceb0');
+    // The grip sits at the hand; the string and limb tips lie on the far side.
     const bowCurve=new THREE.CubicBezierCurve3(
-      new THREE.Vector3(0,.62,0),new THREE.Vector3(.48,.52,0),
-      new THREE.Vector3(.48,-.52,0),new THREE.Vector3(0,-.62,0),
+      new THREE.Vector3(-.36,.62,0),new THREE.Vector3(.12,.52,0),
+      new THREE.Vector3(.12,-.52,0),new THREE.Vector3(-.36,-.62,0),
     );
     mesh(new THREE.TubeGeometry(bowCurve,20,.045,5,false),woodBow,this.bow);
-    mesh(new THREE.CylinderGeometry(.012,.012,1.24,5),string,this.bow,0,0,-.015);
+    mesh(new THREE.CylinderGeometry(.012,.012,1.24,5),string,this.bow,-.36,0,-.015);
+    mesh(new THREE.CylinderGeometry(.065,.065,.24,5),leather,this.bow,0,0,-.035);
     const quiver=mesh(new THREE.CylinderGeometry(.13,.18,.72,7),leather,this.body,.3,1.12,.34);
     quiver.rotation.x=-.18; quiver.rotation.z=-.28;
     for(let i=0;i<3;i++){
