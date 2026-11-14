@@ -2,7 +2,7 @@
 
 Gra 3D w świecie Calionu, inspirowana roguelike survival games. Projekt odrębny od **Calion Survivors**.
 
-**Wersja:** 0.0.25  
+**Wersja:** 0.0.26  
 **Technologia:** Three.js + TypeScript + Vite  
 **Zakres:** eksploracja 3D z doskokiem, skaczącymi Slime'ami i automatyczną walką dystansową
 
@@ -32,7 +32,7 @@ npm run preview
 | Spacja | Skok |
 | Esc | Pauza i uwolnienie kursora |
 
-## Zakres v0.0.25
+## Zakres v0.0.26
 
 - Leśna mapa 3D z ruinami i punktem docelowym.
 - Model łucznika low-poly z łukiem, kołczanem i animacją naciągania; zachowano chód, skok i doskok.
@@ -145,3 +145,11 @@ Nowe typy wprowadzane stopniowo, bez zmiany zasad multiplayer ALFA:
 - Multiplayer pozostaje eksperymentalny i **nie jest objęty** nowym systemem spawnów. Nie wymaga uruchamiania serwera przy grze Solo.
 
 **v0.0.23:** porządkowa poprawka kompilacji strict TypeScript: usunięto nieużywane pole trybu debugowania przywołań. Wszystkie zmiany rozgrywki z v0.0.22 pozostają aktywne.
+
+## Poprawka modelu łucznika v0.0.26
+
+- Naprawiono kaptur: pełna ciemna osłona głowy z niewielkim otworem na twarz zastępuje wcześniejszą półkulę, przez którą wystawała jasna głowa.
+- Łuk jest zamocowany przy lewej dłoni, wysuniętej w przód i na bok, zamiast zachodzić na klatkę piersiową.
+- Kompensowanie obrotu ramienia utrzymuje łuk pionowo przy chodzeniu, doskoku i naciąganiu. Zmniejszono średnicę ramion łuku i cięciwy.
+- Poprawiono pozę spoczynkową i animację strzału. Bez zmian mechaniki celowania, hitboxa, statystyk ani zasobów multiplayer.
+- Test statyczny kontroluje osadzenie broni i animacji, a kompilacja TypeScript/Vite w GitHub Actions sprawdza zgodność kodu.

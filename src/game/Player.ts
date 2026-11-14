@@ -58,14 +58,19 @@ export class Player {
     mesh(new THREE.CylinderGeometry(.36,.48,.86,7),cloth,this.body,0,.84,0);
     mesh(new THREE.BoxGeometry(.75,.84,.46),armor,this.body,0,1.34,0);
     mesh(new THREE.BoxGeometry(.51,.12,.50),trim,this.body,0,1.04,0);
-    mesh(new THREE.CylinderGeometry(.12,.14,.22,6),leather,this.body,0,1.82,-.015);
-    mesh(new THREE.SphereGeometry(.18,8,6),skin,this.body,0,2.01,-.12);
-    // A compact cloth hood frames the face from behind without a tall crown.
-    const hoodCap=mesh(new THREE.SphereGeometry(.215,8,5,0,Math.PI*2,0,Math.PI*.5),hood,this.body,0,2.11,.105);
-    hoodCap.scale.set(1.02,.72,.9);
-    // A narrow brow and eye slit keep the face readable at game distance.
-    mesh(new THREE.BoxGeometry(.28,.055,.055),leather,this.body,0,2.02,-.276);
-    mesh(new THREE.BoxGeometry(.14,.022,.025),trim,this.body,0,2.015,-.306);
+    // A full hood encloses the skull. Only the small forward face opening is exposed.
+    // The previous bare head sphere protruded through a half-cap, resembling a helmet.
+    mesh(new THREE.CylinderGeometry(.19,.22,.23,6),hood,this.body,0,1.82,-.02);
+    const hoodShell=mesh(new THREE.SphereGeometry(.245,8,6),hood,this.body,0,2.035,-.015);
+    hoodShell.scale.set(1.04,1.03,1.07);
+    mesh(new THREE.BoxGeometry(.30,.245,.035),leather,this.body,0,1.992,-.264);
+    mesh(new THREE.BoxGeometry(.205,.157,.039),skin,this.body,0,1.982,-.288);
+    // Hood brim and cloth cheeks frame the opening without hiding the face.
+    mesh(new THREE.BoxGeometry(.35,.085,.11),hood,this.body,0,2.15,-.26);
+    for(const side of [-1,1]){
+      mesh(new THREE.BoxGeometry(.087,.27,.105),hood,this.body,side*.165,1.97,-.254);
+    }
+    mesh(new THREE.BoxGeometry(.155,.025,.036),leather,this.body,0,2.024,-.316);
     // Short field mantle leaves the belt and legs clearly visible.
     mesh(new THREE.BoxGeometry(.78,.58,.12),cloth,this.body,0,.68,.31);
     // Utility belt and a small metal clasp.
@@ -81,24 +86,26 @@ export class Player {
       mesh(new THREE.BoxGeometry(.29,.72,.31),leather,leg,0,-.35,0);
       mesh(new THREE.BoxGeometry(.32,.22,.46),armor,leg,0,-.74,-.1);
     }
-    this.leftArm.position.set(-.48,1.65,0);
-    this.rightArm.position.set(.48,1.65,0);
+    this.leftArm.position.set(-.53,1.62,-.07);
+    this.rightArm.position.set(.48,1.62,-.03);
     this.body.add(this.leftArm,this.rightArm);
     for(const arm of [this.leftArm,this.rightArm]){
       mesh(new THREE.BoxGeometry(.29,.63,.35),armor,arm,0,-.33,0);
       mesh(new THREE.BoxGeometry(.23,.2,.23),skin,arm,0,-.73,0);
     }
-    // Low-poly hunting bow in the left hand and a visible quiver on the back.
-    this.bow.position.set(0,-.72,-.2); this.bow.rotation.z=-.08; this.leftArm.add(this.bow);
+    // The bow grip is centered exactly on the left hand, ahead and to the side of the torso.
+    // Its parent follows the arm, while the animation counter-rotates its pitch so it stays upright.
+    this.bow.position.set(-.015,-.73,-.055);
+    this.leftArm.add(this.bow);
     const woodBow=material('#8c6339',.2), string=material('#d8ceb0');
-    // The grip sits at the hand; the string and limb tips lie on the far side.
     const bowCurve=new THREE.CubicBezierCurve3(
-      new THREE.Vector3(-.36,.62,0),new THREE.Vector3(.12,.52,0),
-      new THREE.Vector3(.12,-.52,0),new THREE.Vector3(-.36,-.62,0),
+      new THREE.Vector3(-.32,.59,0),new THREE.Vector3(.17,.54,0),
+      new THREE.Vector3(.17,-.54,0),new THREE.Vector3(-.32,-.59,0),
     );
-    mesh(new THREE.TubeGeometry(bowCurve,20,.045,5,false),woodBow,this.bow);
-    mesh(new THREE.CylinderGeometry(.012,.012,1.24,5),string,this.bow,-.36,0,-.015);
-    mesh(new THREE.CylinderGeometry(.065,.065,.24,5),leather,this.bow,0,0,-.035);
+    mesh(new THREE.TubeGeometry(bowCurve,24,.037,5,false),woodBow,this.bow);
+    // The string stays on the outside of the bow, not across the hero's chest.
+    mesh(new THREE.CylinderGeometry(.009,.009,1.18,5),string,this.bow,-.32,0,-.025);
+    mesh(new THREE.CylinderGeometry(.055,.055,.22,6),leather,this.bow,0,0,-.022);
     const quiver=mesh(new THREE.CylinderGeometry(.13,.18,.72,7),leather,this.body,.3,1.12,.34);
     quiver.rotation.x=-.18; quiver.rotation.z=-.28;
     for(let i=0;i<3;i++){
@@ -109,9 +116,12 @@ export class Player {
     // Bracer on the bow arm reads as practical field gear.
     mesh(new THREE.BoxGeometry(.34,.29,.39),leather,this.leftArm,0,-.47,-.02);
     mesh(new THREE.BoxGeometry(.36,.08,.41),trim,this.leftArm,0,-.35,-.02);
-    // Both hands stay forward; the bow sits in the left hand, ready to aim.
-    this.leftArm.rotation.x=.28;
-    this.rightArm.rotation.x=.22;
+    // Idle: the bow arm is extended forward; the drawing hand rests lower near the chest.
+    this.leftArm.rotation.x=.68;
+    this.leftArm.rotation.z=-.12;
+    this.rightArm.rotation.x=.24;
+    this.bow.rotation.x=-this.leftArm.rotation.x;
+    this.bow.rotation.z=-this.leftArm.rotation.z;
 
     this.scene.add(this.root);
     const shadowMaterial=new THREE.MeshBasicMaterial({color:'#101715',transparent:true,opacity:.3,depthWrite:false});
@@ -215,24 +225,25 @@ export class Player {
     const swing=Math.sin(this.animTime)*.62*walk;
     this.leftLeg.rotation.x=this.dashing?-.44:this.airborne?-.15:swing;
     this.rightLeg.rotation.x=this.dashing?.52:this.airborne?.28:-swing;
-    this.leftArm.rotation.x=this.dashing?-.22:this.airborne?.05:.28-swing*.12;
-    this.rightArm.rotation.x=this.dashing?-.3:this.airborne?.08:.22+swing*.08;
+    // Keep the grip attached to the left hand and the limbs above/below it.
+    this.leftArm.rotation.x=this.dashing?.44:this.airborne?.55:.68-swing*.10;
+    this.rightArm.rotation.x=this.dashing?.12:this.airborne?.2:.24+swing*.08;
+    this.leftArm.rotation.z=-.12;
     this.rightArm.rotation.z=0;
-    this.leftArm.rotation.z=0;
-    this.bow.rotation.z=THREE.MathUtils.lerp(this.bow.rotation.z,-.08,1-Math.exp(-16*dt));
-    this.bow.rotation.y=THREE.MathUtils.lerp(this.bow.rotation.y,0,1-Math.exp(-16*dt));
-    this.bow.position.z=THREE.MathUtils.lerp(this.bow.position.z,-.2,1-Math.exp(-16*dt));
+    let draw=0;
     if(this.attackTime>0){
       const progress=1-this.attackTime/this.attackDuration;
-      // Lift and cant the bow while the drawing hand moves inward across the chest.
-      const draw=Math.sin(progress*Math.PI);
-      this.leftArm.rotation.x=.28+draw*.48;
-      this.rightArm.rotation.x=.22;
-      this.rightArm.rotation.z=-draw*.62;
-      this.bow.rotation.z=-.08+draw*.2;
-      this.bow.rotation.y=draw*.24;
-      this.bow.position.z=-.2-draw*.1;
+      draw=Math.sin(progress*Math.PI);
+      // Lift the bow away from the torso and bring the drawing hand toward the string.
+      this.leftArm.rotation.x=.68+draw*.38;
+      this.rightArm.rotation.x=.24+draw*.55;
+      this.rightArm.rotation.z=-draw*.48;
     }
+    // Compensate for arm pitch and roll: the bow must not rotate across the chest.
+    this.bow.rotation.x=-this.leftArm.rotation.x;
+    this.bow.rotation.z=-this.leftArm.rotation.z+draw*.08;
+    this.bow.rotation.y=-.15+draw*.13;
+    this.bow.position.set(-.015,-.73,-.055-draw*.075);
     this.body.position.y=(this.airborne?0:Math.abs(Math.sin(this.animTime))*walk*.05) + Math.sin(elapsed*1.9)*.01;
     this.body.rotation.z=Math.sin(this.animTime)*.028*walk;
     this.body.rotation.x=THREE.MathUtils.lerp(this.body.rotation.x,this.dashing?-.33:-.055,1-Math.exp(-17*dt));

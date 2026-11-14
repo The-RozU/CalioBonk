@@ -16,7 +16,7 @@ const required=[
 ];
 for(const path of required) assert(existsSync(join(root,path)),`Brakuje pliku: ${path}`);
 const pkg=JSON.parse(read('package.json'));
-assert.equal(pkg.version,'0.0.25','Nieprawidłowa wersja gry');
+assert.equal(pkg.version,'0.0.26','Nieprawidłowa wersja gry');
 assert.match(read('src/game/Input.ts'),/requestPointerLock/);
 assert.match(read('src/game/Player.ts'),/ShiftLeft/);
 assert.match(read('src/game/Player.ts'),/dashCooldown/);
@@ -25,12 +25,13 @@ assert.match(read('src/game/CameraController.ts'),/this.camera.position.copy\(th
 assert.match(read('src/game/CameraController.ts'),/addEventListener\('wheel'/);
 assert.match(read('src/game/CameraController.ts'),/this.distance=THREE.MathUtils.clamp/);
 assert.match(read('src/game/CameraController.ts'),/3\.2,14/);
-assert.match(read('src/game/Player.ts'),/this.leftArm.rotation.x=\.28\+draw\*\.48/);
-assert.match(read('src/game/Player.ts'),/this.rightArm.rotation.z=-draw\*\.62/);
-assert.match(read('src/game/Player.ts'),/this.bow.rotation.y=draw\*\.24/);
-assert.match(read('src/game/Player.ts'),/compact cloth hood/);
-assert.match(read('src/game/Player.ts'),/grip sits at the hand/);
-assert.match(read('src/game/Player.ts'),/this.bow.rotation.y=draw\*\.24/);
+assert.match(read('src/game/Player.ts'),/this.leftArm.rotation.x=\.68\+draw\*\.38/);
+assert.match(read('src/game/Player.ts'),/this.rightArm.rotation.z=-draw\*\.48/);
+assert.match(read('src/game/Player.ts'),/this.bow.rotation.x=-this.leftArm.rotation.x/);
+assert.match(read('src/game/Player.ts'),/full hood encloses the skull/);
+assert.match(read('src/game/Player.ts'),/bow grip is centered exactly on the left hand/);
+assert.match(read('src/game/Player.ts'),/this.bow.position.set\(-\.015,-\.73,-\.055-draw\*\.075\)/);
+assert.match(read('src/game/Player.ts'),/this.bow.rotation.x=-this.leftArm.rotation.x/);
 assert.match(read('src/game/Player.ts'),/CubicBezierCurve3/);
 assert.match(read('src/game/Slimes.ts'),/aimPosition.clone\(\).sub\(origin\)/);
 assert.match(read('src/game/Slimes.ts'),/origin.distanceTo\(aimPosition\)/);
