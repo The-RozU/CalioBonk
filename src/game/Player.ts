@@ -19,7 +19,9 @@ export class Player {
   private readonly rightLeg = new THREE.Group();
   private readonly leftArm = new THREE.Group();
   private readonly rightArm = new THREE.Group();
+  private readonly rightForearm = new THREE.Group();
   private readonly bow = new THREE.Group();
+  private readonly drawArrow = new THREE.Group();
   private readonly shadow: THREE.Mesh;
   private vx=0;
   private vz=0;
@@ -89,10 +91,13 @@ export class Player {
     this.leftArm.position.set(-.53,1.62,-.07);
     this.rightArm.position.set(.48,1.62,-.03);
     this.body.add(this.leftArm,this.rightArm);
-    for(const arm of [this.leftArm,this.rightArm]){
-      mesh(new THREE.BoxGeometry(.29,.63,.35),armor,arm,0,-.33,0);
-      mesh(new THREE.BoxGeometry(.23,.2,.23),skin,arm,0,-.73,0);
-    }
+    mesh(new THREE.BoxGeometry(.29,.63,.35),armor,this.leftArm,0,-.33,0);
+    mesh(new THREE.BoxGeometry(.23,.2,.23),skin,this.leftArm,0,-.73,0);
+    mesh(new THREE.BoxGeometry(.28,.4,.32),armor,this.rightArm,0,-.2,0);
+    this.rightForearm.position.set(0,-.38,-.015);
+    this.rightArm.add(this.rightForearm);
+    mesh(new THREE.BoxGeometry(.24,.37,.28),armor,this.rightForearm,0,-.18,0);
+    mesh(new THREE.BoxGeometry(.22,.2,.22),skin,this.rightForearm,0,-.39,-.01);
     // The bow grip is centered exactly on the left hand, ahead and to the side of the torso.
     // Its parent follows the arm, while the animation counter-rotates its pitch so it stays upright.
     this.bow.position.set(-.015,-.73,-.055);
@@ -106,6 +111,13 @@ export class Player {
     // The string stays on the outside of the bow, not across the hero's chest.
     mesh(new THREE.CylinderGeometry(.009,.009,1.18,5),string,this.bow,-.32,0,-.025);
     mesh(new THREE.CylinderGeometry(.055,.055,.22,6),leather,this.bow,0,0,-.022);
+    // A nocked practice arrow is visible only while the draw animation is active.
+    this.drawArrow.position.set(-.16,0,-.07);
+    this.bow.add(this.drawArrow);
+    mesh(new THREE.CylinderGeometry(.012,.012,.68,5),iron,this.drawArrow,0,0,-.34).rotation.x=-Math.PI/2;
+    const arrowTip=mesh(new THREE.ConeGeometry(.045,.14,5),iron,this.drawArrow,0,0,-.75);
+    arrowTip.rotation.x=-Math.PI/2;
+    this.drawArrow.visible=false;
     const quiver=mesh(new THREE.CylinderGeometry(.13,.18,.72,7),leather,this.body,.3,1.12,.34);
     quiver.rotation.x=-.18; quiver.rotation.z=-.28;
     for(let i=0;i<3;i++){
@@ -119,7 +131,8 @@ export class Player {
     // Idle: the bow arm is extended forward; the drawing hand rests lower near the chest.
     this.leftArm.rotation.x=.68;
     this.leftArm.rotation.z=-.12;
-    this.rightArm.rotation.x=.24;
+    this.rightArm.rotation.x=.12;
+    this.rightForearm.rotation.set(.35,0,-.25);
     this.bow.rotation.x=-this.leftArm.rotation.x;
     this.bow.rotation.z=-this.leftArm.rotation.z;
 
@@ -227,7 +240,8 @@ export class Player {
     this.rightLeg.rotation.x=this.dashing?.52:this.airborne?.28:-swing;
     // Keep the grip attached to the left hand and the limbs above/below it.
     this.leftArm.rotation.x=this.dashing?.44:this.airborne?.55:.68-swing*.10;
-    this.rightArm.rotation.x=this.dashing?.12:this.airborne?.2:.24+swing*.08;
+    this.rightArm.rotation.x=this.dashing?.12:this.airborne?.2:.12+swing*.05;
+    this.rightForearm.rotation.set(this.dashing?.15:.35,0,this.dashing?-.15:-.25);
     this.leftArm.rotation.z=-.12;
     this.rightArm.rotation.z=0;
     let draw=0;
@@ -236,9 +250,13 @@ export class Player {
       draw=Math.sin(progress*Math.PI);
       // Lift the bow away from the torso and bring the drawing hand toward the string.
       this.leftArm.rotation.x=.68+draw*.38;
-      this.rightArm.rotation.x=.24+draw*.55;
-      this.rightArm.rotation.z=-draw*.48;
+      this.rightArm.rotation.x=.12+draw*1.05;
+      this.rightArm.rotation.z=-draw*.28;
+      this.rightForearm.rotation.x=.35+draw*.28;
+      this.rightForearm.rotation.z=-.25-draw*1.45;
+      this.drawArrow.visible=progress<.58;
     }
+    if(this.attackTime<=0)this.drawArrow.visible=false;
     // Compensate for arm pitch and roll: the bow must not rotate across the chest.
     this.bow.rotation.x=-this.leftArm.rotation.x;
     this.bow.rotation.z=-this.leftArm.rotation.z+draw*.08;
