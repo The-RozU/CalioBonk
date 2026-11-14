@@ -22,6 +22,10 @@ const notice=document.querySelector<HTMLElement>('#notice')!;
 const reticle=document.querySelector<HTMLElement>('#reticle')!;
 const slimeKills=document.querySelector<HTMLElement>('#slime-kills')!;
 const slimeAlive=document.querySelector<HTMLElement>('#slime-alive')!;
+const levelText=document.querySelector<HTMLElement>('#hero-level')!;
+const expText=document.querySelector<HTMLElement>('#hero-exp')!;
+const expFill=document.querySelector<HTMLElement>('#hero-exp-fill')!;
+const levelUp=document.querySelector<HTMLElement>('#level-up')!;
 const heroHealth=document.querySelector<HTMLElement>('#hero-health')!;
 const heroHealthFill=document.querySelector<HTMLElement>('#hero-health-fill')!;
 const damageFlash=document.querySelector<HTMLElement>('#damage-flash')!;
@@ -46,7 +50,7 @@ try {
   input.yaw=-.77;
   const camera=new CameraController(player,input,world);
   const clock=new THREE.Clock();
-  let elapsed=0,started=false,foundGate=false,notificationUntil=0,gameOverShown=false;
+  let elapsed=0,started=false,foundGate=false,notificationUntil=0,gameOverShown=false,lastLevel=1,levelNoticeUntil=0;
   retryButton.addEventListener('click',()=>window.location.reload());
 
   const showMenu=(paused:boolean):void=>{
@@ -98,6 +102,11 @@ try {
     distanceText.textContent=foundGate?'Lokacja odkryta · dalsza eksploracja':`${Math.round(distance)} m do celu`;
     slimeKills.textContent=String(horde.kills);
     slimeAlive.textContent=String(horde.alive);
+    levelText.textContent=`POZIOM ${horde.level}`;
+    expText.textContent=`${horde.experienceProgress} / ${horde.experienceRequired} EXP`;
+    expFill.style.width=`${(horde.experienceProgress/horde.experienceRequired*100).toFixed(0)}%`;
+    if(horde.level>lastLevel){lastLevel=horde.level;levelNoticeUntil=elapsed+2;levelUp.classList.add('visible');}
+    if(levelNoticeUntil>0&&elapsed>levelNoticeUntil){levelUp.classList.remove('visible');levelNoticeUntil=0;}
     heroHealth.textContent=`${player.health} / 100`;
     heroHealthFill.style.width=`${player.health}%`;
     if(player.health<35) heroHealthFill.classList.add('critical'); else heroHealthFill.classList.remove('critical');

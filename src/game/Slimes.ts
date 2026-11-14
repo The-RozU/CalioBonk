@@ -176,6 +176,7 @@ class Slime {
 }
 
 type StrikeEffect = { mesh: THREE.Mesh<THREE.TorusGeometry, THREE.MeshBasicMaterial>; age: number };
+type ExperienceGem = { root: THREE.Group; age: number; baseY: number; value: number };
 type ArrowFlight = { mesh: THREE.Group; target: Slime; age: number };
 
 function makeArrow(): THREE.Group {
@@ -192,6 +193,11 @@ export class SlimeHorde {
   private readonly enemies: Slime[] = [];
   private readonly effects: StrikeEffect[] = [];
   private readonly arrows: ArrowFlight[] = [];
+  private readonly experienceGems: ExperienceGem[] = [];
+  experience = 0;
+  level = 1;
+  experienceProgress = 0;
+  experienceRequired = 15;
   private contactCooldown = 0;
   private seed = 72819;
   private spawnDelay = 2.4;
@@ -239,6 +245,29 @@ export class SlimeHorde {
     this.effects.push({mesh, age: 0});
   }
 
+  private dropExperience(enemy: Slime): void {
+    const root=new THREE.Group();
+    const gem=new THREE.Mesh(new THREE.OctahedronGeometry(.22,0),new THREE.MeshStandardMaterial({color:'#8de1b1',emissive:'#2b9b66',emissiveIntensity:1.2,metalness:.35,roughness:.25}));
+    gem.rotation.z=Math.PI/4;
+    root.add(gem);
+    const glow=new THREE.Mesh(new THREE.OctahedronGeometry(.34,0),new THREE.MeshBasicMaterial({color:'#71e5ae',wireframe:true,transparent:true,opacity:.45,depthWrite:false}));
+    root.add(glow);
+    root.position.copy(enemy.position);
+    root.position.y+=.45;
+    this.world.scene.add(root);
+    this.experienceGems.push({root,age:0,baseY:root.position.y,value:5});
+  }
+
+  private gainExperience(amount:number): void {
+    this.experience+=amount;
+    this.experienceProgress+=amount;
+    while(this.experienceProgress>=this.experienceRequired){
+      this.experienceProgress-=this.experienceRequired;
+      this.level++;
+      this.experienceRequired=15*this.level;
+    }
+  }
+
   update(dt: number, player: Player, camera: THREE.Camera): void {
     if (!this.started) return;
     const hero = player.root.position;
@@ -276,7 +305,7 @@ export class SlimeHorde {
       const step=22*dt;
       origin.addScaledVector(direction,step);
       if(origin.distanceTo(aimPosition)<step+.65){
-        if(flight.target.takeHit(ARROW_DAMAGE)) this.kills++;
+        if(flight.target.takeHit(ARROW_DAMAGE)){this.kills++;this.dropExperience(flight.target);}
         this.strikeEffect(flight.target);
         this.world.scene.remove(flight.mesh);
         flight.mesh.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});
@@ -287,6 +316,25 @@ export class SlimeHorde {
       const touching=this.enemies.some(enemy=>!enemy.dead && Math.hypot(enemy.position.x-hero.x,enemy.position.z-hero.z)<1.35);
       if(touching && player.takeDamage(CONTACT_DAMAGE)) this.contactCooldown=.24;
     }
+    for(let i=this.experienceGems.length-1;i>=0;i--){
+      const pickup=this.experienceGems[i]!;
+      pickup.age+=dt;
+      pickup.root.rotation.y+=dt*1.6;
+      pickup.root.position.y=pickup.baseY+Math.sin(pickup.age*2.8)*.12;
+      const dx=hero.x-pickup.root.position.x,dy=hero.y+1-pickup.root.position.y,dz=hero.z-pickup.root.position.z;
+      const distance=Math.hypot(dx,dy,dz);
+      if(distance<5){
+        const pull=Math.min(1,dt*4.5);
+        pickup.root.position.x+=dx*pull;pickup.root.position.y+=dy*pull;pickup.root.position.z+=dz*pull;
+      }
+      if(distance<.85){
+        this.gainExperience(pickup.value);
+        this.world.scene.remove(pickup.root);
+        pickup.root.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});
+        this.experienceGems.splice(i,1);
+      }
+    }
+
     this.cooldown = Math.max(0, this.cooldown - dt);
     if (this.cooldown <= 0) {
       let closest: Slime | undefined;
