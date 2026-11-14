@@ -11,9 +11,15 @@ export class CameraController {
   private readonly desired = new THREE.Vector3();
   private readonly direction = new THREE.Vector3();
   private started = false;
+  private distance = 6.1;
 
   constructor(private readonly player:Player,private readonly input:Input,private readonly world:World) {
     this.camera=new THREE.PerspectiveCamera(64,window.innerWidth/window.innerHeight,.06,480);
+    window.addEventListener('wheel',(event)=>{
+      if(!this.input.active) return;
+      event.preventDefault();
+      this.distance=THREE.MathUtils.clamp(this.distance+Math.sign(event.deltaY)*.7,3.2,10.5);
+    },{passive:false});
     this.update(1);
   }
   update(dt:number):void {
@@ -22,7 +28,7 @@ export class CameraController {
     // The old .lerp(camera.position, 11*dt) added noticeable input latency.
     if (!this.started) this.followTarget.copy(this.target);
     else this.followTarget.lerp(this.target, 1 - Math.exp(-22 * dt));
-    const distance=6.1, horizontal=Math.cos(this.input.pitch)*distance;
+    const distance=this.distance, horizontal=Math.cos(this.input.pitch)*distance;
     this.desired.set(
       this.followTarget.x+Math.sin(this.input.yaw)*horizontal,
       this.followTarget.y+1.05+Math.sin(this.input.pitch)*distance,

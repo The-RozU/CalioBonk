@@ -270,12 +270,12 @@ export class SlimeHorde {
         this.arrows.splice(i,1); continue;
       }
       const origin=flight.mesh.position;
-      const aim=flight.target.position.clone().add(new THREE.Vector3(0,.72,0));
-      const direction=aim.sub(origin).normalize();
+      const aimPosition=flight.target.position.clone().add(new THREE.Vector3(0,.72,0));
+      const direction=aimPosition.clone().sub(origin).normalize();
       flight.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);
       const step=22*dt;
       origin.addScaledVector(direction,step);
-      if(origin.distanceTo(aim)<step+.45){
+      if(origin.distanceTo(aimPosition)<step+.65){
         if(flight.target.takeHit(ARROW_DAMAGE)) this.kills++;
         this.strikeEffect(flight.target);
         this.world.scene.remove(flight.mesh);
