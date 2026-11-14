@@ -19,6 +19,7 @@ export class Player {
   private readonly rightLeg = new THREE.Group();
   private readonly leftArm = new THREE.Group();
   private readonly rightArm = new THREE.Group();
+  private readonly bow = new THREE.Group();
   private readonly shadow: THREE.Mesh;
   private vx=0;
   private vz=0;
@@ -57,10 +58,13 @@ export class Player {
     mesh(new THREE.CylinderGeometry(.36,.48,.86,7),cloth,this.body,0,.84,0);
     mesh(new THREE.BoxGeometry(.75,.84,.46),armor,this.body,0,1.34,0);
     mesh(new THREE.BoxGeometry(.51,.12,.50),trim,this.body,0,1.04,0);
-    mesh(new THREE.SphereGeometry(.245,7,5),skin,this.body,0,1.98,-.02);
-    mesh(new THREE.ConeGeometry(.32,.43,7),hood,this.body,0,2.12,.08);
-    // A narrow band of dark visor keeps the face visible against the hood.
-    mesh(new THREE.BoxGeometry(.33,.105,.08),leather,this.body,0,1.98,-.235);
+    mesh(new THREE.SphereGeometry(.205,8,6),skin,this.body,0,1.99,-.11);
+    // Rounded hood cap sits behind the face instead of forming a pointed helmet.
+    const hoodCap=mesh(new THREE.SphereGeometry(.27,8,5,0,Math.PI*2,0,Math.PI*.56),hood,this.body,0,2.04,.08);
+    hoodCap.scale.set(1.14,1.12,1);
+    // Simple brow and eye slit make the face readable at game distance.
+    mesh(new THREE.BoxGeometry(.31,.07,.065),leather,this.body,0,2.01,-.287);
+    mesh(new THREE.BoxGeometry(.16,.025,.025),trim,this.body,0,2.005,-.326);
     // Short field mantle leaves the belt and legs clearly visible.
     mesh(new THREE.BoxGeometry(.78,.58,.12),cloth,this.body,0,.68,.31);
     // Utility belt and a small metal clasp.
@@ -84,14 +88,14 @@ export class Player {
       mesh(new THREE.BoxGeometry(.23,.2,.23),skin,arm,0,-.73,0);
     }
     // Low-poly hunting bow in the left hand and a visible quiver on the back.
-    const bow = new THREE.Group(); bow.position.set(0,-.72,-.2); bow.rotation.z=-.08; this.leftArm.add(bow);
+    this.bow.position.set(0,-.72,-.2); this.bow.rotation.z=-.08; this.leftArm.add(this.bow);
     const woodBow=material('#8c6339',.2), string=material('#d8ceb0');
     const bowCurve=new THREE.CubicBezierCurve3(
       new THREE.Vector3(0,.62,0),new THREE.Vector3(.48,.52,0),
       new THREE.Vector3(.48,-.52,0),new THREE.Vector3(0,-.62,0),
     );
-    mesh(new THREE.TubeGeometry(bowCurve,20,.045,5,false),woodBow,bow);
-    mesh(new THREE.CylinderGeometry(.012,.012,1.24,5),string,bow,0,0,-.015);
+    mesh(new THREE.TubeGeometry(bowCurve,20,.045,5,false),woodBow,this.bow);
+    mesh(new THREE.CylinderGeometry(.012,.012,1.24,5),string,this.bow,0,0,-.015);
     const quiver=mesh(new THREE.CylinderGeometry(.13,.18,.72,7),leather,this.body,.3,1.12,.34);
     quiver.rotation.x=-.18; quiver.rotation.z=-.28;
     for(let i=0;i<3;i++){
@@ -212,12 +216,19 @@ export class Player {
     this.rightArm.rotation.x=this.dashing?-.3:this.airborne?.08:.22+swing*.08;
     this.rightArm.rotation.z=0;
     this.leftArm.rotation.z=0;
+    this.bow.rotation.z=THREE.MathUtils.lerp(this.bow.rotation.z,-.08,1-Math.exp(-16*dt));
+    this.bow.rotation.y=THREE.MathUtils.lerp(this.bow.rotation.y,0,1-Math.exp(-16*dt));
+    this.bow.position.z=THREE.MathUtils.lerp(this.bow.position.z,-.2,1-Math.exp(-16*dt));
     if(this.attackTime>0){
       const progress=1-this.attackTime/this.attackDuration;
-      // Keep the bow arm extended while the other hand draws toward the chest.
-      this.leftArm.rotation.x=.28;
-      this.rightArm.rotation.x=.22-Math.sin(progress*Math.PI)*.62;
-      this.rightArm.rotation.z=.04+Math.sin(progress*Math.PI)*.12;
+      // Lift and cant the bow while the drawing hand moves inward across the chest.
+      const draw=Math.sin(progress*Math.PI);
+      this.leftArm.rotation.x=.28+draw*.48;
+      this.rightArm.rotation.x=.22;
+      this.rightArm.rotation.z=-draw*.62;
+      this.bow.rotation.z=-.08+draw*.2;
+      this.bow.rotation.y=draw*.24;
+      this.bow.position.z=-.2-draw*.1;
     }
     this.body.position.y=(this.airborne?0:Math.abs(Math.sin(this.animTime))*walk*.05) + Math.sin(elapsed*1.9)*.01;
     this.body.rotation.z=Math.sin(this.animTime)*.028*walk;
