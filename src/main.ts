@@ -177,7 +177,7 @@ upgradeCards.forEach(button=>button.addEventListener('click',()=>{
     elapsed+=dt;
     fpsFrames++;fpsElapsed+=rawDt;
     if(fpsElapsed>=.5){fpsValue=Math.round(fpsFrames/fpsElapsed);fpsFrames=0;fpsElapsed=0;}
-    if(debugEnabled) performanceText.textContent='FPS '+fpsValue+' · WROGOWIE '+horde.alive+' · POCISKI '+horde.projectileCount+' · EFEKTY '+horde.effectCount+' · EXP '+horde.crystalCount+' · DRAW '+renderer.info.render.calls;
+    if(debugEnabled) performanceText.textContent='FPS '+fpsValue+' · WROGOWIE '+horde.alive+' · POCISKI '+horde.projectileCount+' · EFEKTY '+horde.effectCount+' · EXP '+horde.crystalCount+' · MOB '+horde.renderMode+' · DRAW '+renderer.info.render.calls;
     world.update(elapsed);
     if(input.active){
       if(!player.defeated && !choosingUpgrade){

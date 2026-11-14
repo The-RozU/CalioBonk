@@ -14,7 +14,7 @@ const required=[
 ];
 for(const path of required) assert(existsSync(join(root,path)),`Brakuje pliku: ${path}`);
 const pkg=JSON.parse(read('package.json'));
-assert.equal(pkg.version,'0.0.11','Nieprawidłowa wersja gry');
+assert.equal(pkg.version,'0.0.12','Nieprawidłowa wersja gry');
 assert.match(read('src/game/Input.ts'),/requestPointerLock/);
 assert.match(read('src/game/Player.ts'),/ShiftLeft/);
 assert.match(read('src/game/Player.ts'),/dashCooldown/);
@@ -37,6 +37,9 @@ assert.match(read('src/game/Slimes.ts'),/dropExperience/);
 assert.match(read('src/game/Slimes.ts'),/pendingLevelUps/);
 assert.match(read('src/game/Slimes.ts'),/type AttackKind/);
 assert.match(read('src/game/Slimes.ts'),/new THREE.SphereGeometry\(\.66,8,6\)/);
+assert.match(read('src/game/Slimes.ts'),/CanvasTexture/);
+assert.match(read('src/game/Slimes.ts'),/SLIME_RENDER_MODE/);
+assert.match(read('src/game/Slimes.ts'),/new URLSearchParams\(location.search\)/);
 assert.match(read('src/game/Slimes.ts'),/projectileCount/);
 assert.match(read('src/game/Slimes.ts'),/crystalCount/);
 assert.match(read('src/main.ts'),/renderer.info.render.calls/);

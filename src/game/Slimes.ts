@@ -6,6 +6,17 @@ import type { Player } from './Player';
 const MAX_HEALTH = 36;
 const ARROW_DAMAGE = 18;
 const CONTACT_DAMAGE = 12;
+export type SlimeRenderMode='3d'|'sprite';
+export const SLIME_RENDER_MODE:SlimeRenderMode=new URLSearchParams(location.search).get('slime')==='3d'?'3d':'sprite';
+const slimeSpriteTexture=(()=>{
+  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;const ctx=canvas.getContext('2d')!;
+  ctx.clearRect(0,0,128,128);ctx.beginPath();ctx.moveTo(17,72);ctx.quadraticCurveTo(12,42,37,32);ctx.quadraticCurveTo(62,10,91,32);ctx.quadraticCurveTo(116,47,111,76);ctx.quadraticCurveTo(105,111,65,114);ctx.quadraticCurveTo(25,111,17,72);ctx.closePath();
+  ctx.fillStyle='#173a2b';ctx.fill();ctx.strokeStyle='#0a2018';ctx.lineWidth=8;ctx.stroke();
+  const shine=ctx.createRadialGradient(53,45,4,65,72,55);shine.addColorStop(0,'#c4f2a1');shine.addColorStop(.35,'#70cf7b');shine.addColorStop(1,'#26764b');ctx.fillStyle=shine;ctx.fill();
+  ctx.fillStyle='#f4efc9';ctx.beginPath();ctx.ellipse(48,67,8,12,0,0,Math.PI*2);ctx.ellipse(79,67,8,12,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#17251b';ctx.beginPath();ctx.arc(50,69,3.5,0,Math.PI*2);ctx.arc(81,69,3.5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(231,255,190,.55)';ctx.fillRect(37,43,12,4);ctx.fillRect(32,49,5,4);
+  const texture=new THREE.CanvasTexture(canvas);texture.magFilter=THREE.NearestFilter;texture.minFilter=THREE.NearestFilter;texture.colorSpace=THREE.SRGBColorSpace;return texture;
+})();
 type AttackKind='bow'|'triple'|'poison'|'piercing';
 
 function addPart(
@@ -25,7 +36,8 @@ class Slime {
   readonly root = new THREE.Group();
   readonly shadow: THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>;
   private readonly body = new THREE.Group();
-  private readonly jelly: THREE.Mesh<THREE.IcosahedronGeometry, THREE.MeshStandardMaterial>;
+  private readonly jelly: THREE.Mesh<THREE.SphereGeometry, THREE.MeshStandardMaterial>;
+  private readonly billboard:THREE.Sprite;
   private readonly healthBar = new THREE.Group();
   private readonly healthFill: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
   private health = MAX_HEALTH;
@@ -90,6 +102,10 @@ class Slime {
       new THREE.MeshBasicMaterial({color: '#07150d', transparent: true, opacity: .33, depthWrite: false}),
     );
     this.shadow.rotation.x = -Math.PI / 2;
+    this.body.visible=SLIME_RENDER_MODE==='3d';
+    this.billboard=new THREE.Sprite(new THREE.SpriteMaterial({map:slimeSpriteTexture,transparent:true,depthWrite:false,alphaTest:.08}));
+    this.billboard.position.set(0,.49,0);this.billboard.scale.set(.92,.96,1);this.root.add(this.billboard);
+    this.billboard.visible=SLIME_RENDER_MODE==='sprite';
     this.scene.add(this.root, this.shadow);
     this.jumpDelay = .27 + variation * .65;
   }
@@ -126,6 +142,7 @@ class Slime {
     this.hitFlash = Math.max(0, this.hitFlash - dt);
     this.jelly.material.emissiveIntensity = this.hitFlash > 0 ? 2.5 : this.poisonRemaining>0 ? .9 : .38;
     this.jelly.material.emissive.set(this.poisonRemaining>0?'#34c96c':'#225d32');
+    this.billboard.material.color.set(this.hitFlash>0?'#ffb18f':this.poisonRemaining>0?'#8cff91':'#ffffff');
     if(this.poisonRemaining>0){this.poisonRemaining=Math.max(0,this.poisonRemaining-dt);this.poisonTick-=dt;if(this.poisonTick<=0){this.health=Math.max(0,this.health-this.poisonDamage*.5);this.poisonTick=.5;if(this.health<=0)this.dead=true;}}
     this.jumpDelay -= dt;
     const dx = hero.x - this.root.position.x;
@@ -180,6 +197,7 @@ class Slime {
     });
     this.shadow.geometry.dispose();
     this.shadow.material.dispose();
+    this.billboard.material.dispose();
   }
 }
 
@@ -222,6 +240,7 @@ export class SlimeHorde {
   constructor(private readonly world: World) {}
 
   get alive(): number { return this.enemies.filter(enemy => !enemy.dead).length; }
+  get renderMode():SlimeRenderMode { return SLIME_RENDER_MODE; }
   get projectileCount():number { return this.arrows.length; }
   get effectCount():number { return this.effects.length+this.damageNumbers.length; }
   get crystalCount():number { return this.experienceGems.length; }
