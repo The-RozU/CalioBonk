@@ -4,7 +4,8 @@ import type { World } from './World';
 import type { Player } from './Player';
 
 const MAX_HEALTH = 36;
-const ATTACK_DAMAGE = 12;
+const ARROW_DAMAGE = 18;
+const CONTACT_DAMAGE = 12;
 
 function addPart(
   parent: THREE.Object3D,
@@ -122,7 +123,7 @@ class Slime {
     const dx = hero.x - this.root.position.x;
     const dz = hero.z - this.root.position.z;
     const distance = Math.hypot(dx, dz);
-    const chasing = distance > 1.7 && distance < 38;
+    const chasing = distance > .95 && distance < 38;
 
     if (this.height <= 0 && this.verticalSpeed <= 0 && chasing && this.jumpDelay <= 0) {
       this.verticalSpeed = 5.2;
@@ -174,14 +175,24 @@ class Slime {
   }
 }
 
-type StrikeEffect = {
-  mesh: THREE.Mesh<THREE.TorusGeometry, THREE.MeshBasicMaterial>;
-  age: number;
-};
+type StrikeEffect = { mesh: THREE.Mesh<THREE.TorusGeometry, THREE.MeshBasicMaterial>; age: number };
+type ArrowFlight = { mesh: THREE.Group; target: Slime; age: number };
+
+function makeArrow(): THREE.Group {
+  const arrow=new THREE.Group();
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.82,5),new THREE.MeshStandardMaterial({color:'#d8c28b',metalness:.35,roughness:.55}));
+  shaft.rotation.x=-Math.PI/2; arrow.add(shaft);
+  const tip=new THREE.Mesh(new THREE.ConeGeometry(.075,.22,5),new THREE.MeshStandardMaterial({color:'#bbc4b5',metalness:.7,roughness:.3}));
+  tip.rotation.x=-Math.PI/2; tip.position.z=-.5; arrow.add(tip);
+  for(const side of [-1,1]){const feather=new THREE.Mesh(new THREE.BoxGeometry(.055,.12,.16),new THREE.MeshBasicMaterial({color:'#b66d4c'}));feather.position.set(side*.035,0,.35);arrow.add(feather);}
+  return arrow;
+}
 
 export class SlimeHorde {
   private readonly enemies: Slime[] = [];
   private readonly effects: StrikeEffect[] = [];
+  private readonly arrows: ArrowFlight[] = [];
+  private contactCooldown = 0;
   private seed = 72819;
   private spawnDelay = 2.4;
   private cooldown = 0;
@@ -231,6 +242,7 @@ export class SlimeHorde {
   update(dt: number, player: Player, camera: THREE.Camera): void {
     if (!this.started) return;
     const hero = player.root.position;
+    this.contactCooldown=Math.max(0,this.contactCooldown-dt);
 
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const enemy = this.enemies[i]!;
@@ -250,10 +262,35 @@ export class SlimeHorde {
       }
     }
 
+    for(let i=this.arrows.length-1;i>=0;i--){
+      const flight=this.arrows[i]!;
+      flight.age+=dt;
+      if(flight.target.dead || flight.age>2.5){
+        this.world.scene.remove(flight.mesh); flight.mesh.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});
+        this.arrows.splice(i,1); continue;
+      }
+      const origin=flight.mesh.position;
+      const aim=flight.target.position.clone().add(new THREE.Vector3(0,.72,0));
+      const direction=aim.sub(origin).normalize();
+      flight.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);
+      const step=22*dt;
+      origin.addScaledVector(direction,step);
+      if(origin.distanceTo(aim)<step+.45){
+        if(flight.target.takeHit(ARROW_DAMAGE)) this.kills++;
+        this.strikeEffect(flight.target);
+        this.world.scene.remove(flight.mesh);
+        flight.mesh.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});
+        this.arrows.splice(i,1);
+      }
+    }
+    if(this.contactCooldown<=0 && !player.defeated){
+      const touching=this.enemies.some(enemy=>!enemy.dead && Math.hypot(enemy.position.x-hero.x,enemy.position.z-hero.z)<1.35);
+      if(touching && player.takeDamage(CONTACT_DAMAGE)) this.contactCooldown=.24;
+    }
     this.cooldown = Math.max(0, this.cooldown - dt);
     if (this.cooldown <= 0) {
       let closest: Slime | undefined;
-      let distanceSq = 3.2 * 3.2;
+      let distanceSq = 24 * 24;
       for (const enemy of this.enemies) {
         if (enemy.dead) continue;
         const dx = enemy.position.x - hero.x;
@@ -266,8 +303,12 @@ export class SlimeHorde {
       }
       if (closest && player.startAttack(closest.position)) {
         this.cooldown = .78;
-        this.strikeEffect(closest);
-        if (closest.takeHit(ATTACK_DAMAGE)) this.kills++;
+        const arrow=makeArrow();
+        arrow.position.copy(hero).add(new THREE.Vector3(0,1.45,0));
+        const direction=closest.position.clone().add(new THREE.Vector3(0,.72,0)).sub(arrow.position).normalize();
+        arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),direction);
+        this.world.scene.add(arrow);
+        this.arrows.push({mesh:arrow,target:closest,age:0});
       }
     }
 

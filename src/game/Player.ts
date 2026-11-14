@@ -31,6 +31,9 @@ export class Player {
   readonly dashCooldownDuration = 1.4;
   private dashRemaining = 0;
   private readonly dashDuration = 0.23;
+  health = 100;
+  private damageCooldown = 0;
+  private hitFlash = 0;
   private attackTime = 0;
   private readonly attackDuration = .43;
   private attackHeading = 0;
@@ -76,17 +79,21 @@ export class Player {
       mesh(new THREE.BoxGeometry(.29,.63,.35),armor,arm,0,-.33,0);
       mesh(new THREE.BoxGeometry(.23,.2,.23),skin,arm,0,-.73,0);
     }
-    // Training sword, not yet an attack mechanic.
-    const sword = new THREE.Group();sword.position.set(.03,-.83,-.04);this.rightArm.add(sword);
-    mesh(new THREE.BoxGeometry(.09,.58,.12),leather,sword,0,-.23,0);
-    mesh(new THREE.BoxGeometry(.38,.09,.16),trim,sword,0,-.49,0);
-    mesh(new THREE.BoxGeometry(.13,1.04,.1),iron,sword,0,-1.0,0);
-    const tip=mesh(new THREE.ConeGeometry(.091,.3,4),iron,sword,0,-1.65,0);tip.rotation.y=Math.PI/4;
-    this.rightArm.rotation.x=-.25;
-    // A compact shield makes the prototype silhouette easier to read.
-    const shield=mesh(new THREE.CylinderGeometry(.37,.30,.11,6),leather,this.leftArm,-.08,-.62,-.25);
-    shield.rotation.x=Math.PI/2;
-    const boss=mesh(new THREE.OctahedronGeometry(.17),trim,this.leftArm,-.08,-.62,-.36);boss.scale.z=.45;
+    // Low-poly hunting bow in the left hand and a visible quiver on the back.
+    const bow = new THREE.Group(); bow.position.set(0,-.72,-.12); this.leftArm.add(bow);
+    const woodBow=material('#8c6339',.2), string=material('#d8ceb0');
+    const arc=mesh(new THREE.TorusGeometry(.48,.045,5,18,Math.PI*1.72),woodBow,bow,0,-.05,0);
+    arc.rotation.z=Math.PI/2;
+    const stringLine=mesh(new THREE.CylinderGeometry(.018,.018,.88,5),string,bow,0,0,-.015);
+    stringLine.rotation.z=Math.PI/2;
+    const quiver=mesh(new THREE.CylinderGeometry(.13,.18,.72,7),leather,this.body,.3,1.12,.34);
+    quiver.rotation.x=-.18; quiver.rotation.z=-.28;
+    for(let i=0;i<3;i++){
+      const shaft=mesh(new THREE.CylinderGeometry(.012,.012,.56,4),iron,this.body,.3+i*.045,1.56,.31);
+      shaft.rotation.z=-.08;
+    }
+    this.leftArm.rotation.x=-.72;
+    this.rightArm.rotation.x=-.45;
 
     this.scene.add(this.root);
     const shadowMaterial=new THREE.MeshBasicMaterial({color:'#101715',transparent:true,opacity:.3,depthWrite:false});
@@ -96,11 +103,22 @@ export class Player {
     this.scene.add(this.shadow);
   }
 
+  get defeated():boolean { return this.health <= 0; }
+  get hitRecently():boolean { return this.hitFlash > 0; }
+
+  takeDamage(amount:number):boolean {
+    if(this.defeated || this.damageCooldown>0) return false;
+    this.health=Math.max(0,this.health-amount);
+    this.damageCooldown=.85;
+    this.hitFlash=.28;
+    return true;
+  }
+
   startAttack(target:THREE.Vector3):boolean {
     if (this.dashing || this.attackTime > 0) return false;
     const dx=target.x-this.root.position.x;
     const dz=target.z-this.root.position.z;
-    if (Math.hypot(dx,dz)>3.3) return false;
+    if (Math.hypot(dx,dz)>24) return false;
     this.attackHeading=Math.atan2(-dx,-dz);
     this.attackTime=this.attackDuration;
     return true;
@@ -108,6 +126,8 @@ export class Player {
 
   update(dt:number,input:Input,world:World,elapsed:number):void {
     this.attackTime=Math.max(0,this.attackTime-dt);
+    this.damageCooldown=Math.max(0,this.damageCooldown-dt);
+    this.hitFlash=Math.max(0,this.hitFlash-dt);
     const axes=input.getAxes();
     const dx = -Math.sin(input.yaw)*axes.forward + Math.cos(input.yaw)*axes.right;
     const dz = -Math.cos(input.yaw)*axes.forward - Math.sin(input.yaw)*axes.right;
@@ -178,12 +198,14 @@ export class Player {
     this.leftLeg.rotation.x=this.dashing?-.44:this.airborne?-.15:swing;
     this.rightLeg.rotation.x=this.dashing?.52:this.airborne?.28:-swing;
     this.leftArm.rotation.x=this.dashing?-.68:this.airborne?-.28:-swing*.5;
-    this.rightArm.rotation.x=this.dashing?-.72:this.airborne?-.2:swing*.37-.25;
+    this.rightArm.rotation.x=this.dashing?-.72:this.airborne?-.2:swing*.12-.45;
     this.rightArm.rotation.z=0;
+    this.leftArm.rotation.z=0;
     if(this.attackTime>0){
       const progress=1-this.attackTime/this.attackDuration;
-      this.rightArm.rotation.x=-1.55+progress*2.45;
-      this.rightArm.rotation.z=-Math.sin(progress*Math.PI)*.88;
+      this.leftArm.rotation.x=-.9-progress*.18;
+      this.rightArm.rotation.x=-.45-progress*.72;
+      this.rightArm.rotation.z=.12+Math.sin(progress*Math.PI)*.16;
     }
     this.body.position.y=(this.airborne?0:Math.abs(Math.sin(this.animTime))*walk*.05) + Math.sin(elapsed*1.9)*.01;
     this.body.rotation.z=Math.sin(this.animTime)*.028*walk;

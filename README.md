@@ -2,9 +2,9 @@
 
 Gra 3D w świecie Calionu, inspirowana roguelike survival games. Projekt odrębny od **Calion Survivors**.
 
-**Wersja:** 0.0.6  
+**Wersja:** 0.0.7  
 **Technologia:** Three.js + TypeScript + Vite  
-**Zakres:** eksploracja 3D z doskokiem, skaczącymi Slime'ami i automatycznym atakiem
+**Zakres:** eksploracja 3D z doskokiem, skaczącymi Slime'ami i automatyczną walką dystansową
 
 ## Uruchomienie lokalnie
 
@@ -32,17 +32,19 @@ npm run preview
 | Spacja | Skok |
 | Esc | Pauza i uwolnienie kursora |
 
-## Zakres v0.0.6
+## Zakres v0.0.7
 
 - Leśna mapa 3D z ruinami i punktem docelowym.
-- Model postaci low-poly z animacją chodu, skoku i doskoku.
+- Model łucznika low-poly z łukiem, kołczanem i animacją naciągania; zachowano chód, skok i doskok.
+- Automatyczne namierzanie najbliższego Slime'a do 24 m i widoczne strzały w locie.
 - Kamera trzecioosobowa i kolizje terenowe.
 - HUD, menu startowe i pauza, znacznik celu i odkrycie lokacji.
 - Tekstury `.webp`.
 - Zielone, skaczące Slime'y podążają za graczem, mają po 36 HP i animację trafienia.
-- Automatyczne ciosy mieczem w zasięgu 3,2 m, 12 obrażeń co 0,78 s (3 trafienia do pokonania Slime'a).
+- Automatyczne strzały zadające 18 obrażeń co 0,78 s (2 trafienia do pokonania Slime'a).
+- Bohater ma 100 HP; kontakt ze Slime'em zadaje 12 obrażeń z sygnalizacją trafienia i krótkim cooldownem.
+- Przy 0 HP pojawia się ekran końca wyprawy z przyciskiem ponownego startu.
 - Liczniki przeciwników i pokonanych Slime'ów; nowych wrogów pojawia się maksymalnie 6 naraz.
-- Slime'y na razie nie zadają obrażeń graczowi, aby skupić testy na sterowaniu i automatycznych atakach.
 - Zmiana nazwy projektu na **CalioBonk**, przygotowanie automatycznej publikacji na Pages z gałęzi `dev-mode`.
 
 ## GitHub Pages i gałęzie
@@ -59,4 +61,4 @@ Plik `vite.config.ts` ustawia docelową ścieżkę zasobów (`base: '/CalioBonk/
 
 ## Kolejny etap
 
-W kolejnej wersji: obrażenia gracza, śmierć i odrodzenie, czytelniejsze efekty trafień oraz EXP.
+W kolejnej wersji: rozwój postaci i zdobywanie doświadczenia.

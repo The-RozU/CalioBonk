@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0b100e" />
     <meta name="description" content="CalioBonk. Prototyp mrocznej gry survival 3D w świecie Calionu." />
-    <title>CalioBonk | v0.0.6</title>
+    <title>CalioBonk | v0.0.7</title>
   </head>
   <body>
     <div id="app">
@@ -20,7 +20,7 @@
         </div>
         <div class="hud-right">
           <span class="stage-label"><span class="live-dot"></span> PROTOTYP 3D</span>
-          <span class="version">ALFA v0.0.6</span>
+          <span class="version">ALFA v0.0.7</span>
         </div>
       </header>
 
@@ -34,6 +34,9 @@
         <div class="combat-details"><small>POLIGON WALKI · SLIME</small><strong>Pokonane: <span id="slime-kills">0</span></strong><small>W pobliżu: <span id="slime-alive">0</span> · ATAK AUTOMATYCZNY</small></div>
       </div>
 
+      <section class="hero-health" aria-label="Zdrowie bohatera"><div class="hero-health-heading"><span>ŻYCIE ŁUCZNIKA</span><strong id="hero-health">100 / 100</strong></div><div class="hero-health-track"><div id="hero-health-fill"></div></div></section>
+      <div id="damage-flash" class="damage-flash" aria-hidden="true"></div>
+      <div id="game-over" class="game-over" role="dialog" aria-modal="true"><div><small>WYPRAWA ZAKOŃCZONA</small><h2>Bohater poległ</h2><p>Slime’y przejęły pogranicze. Zbierz siły i spróbuj ponownie.</p><button id="retry-button" type="button">ROZPOCZNIJ PONOWNIE</button></div></div>
       <div id="reticle" class="reticle" aria-hidden="true"><span></span></div>
 
       <div class="hud-bottom">
@@ -55,10 +58,10 @@
       <div id="menu" class="menu-scrim" role="dialog" aria-modal="true" aria-labelledby="menu-title">
         <div class="menu-panel">
           <div class="crest" aria-hidden="true"><div class="crest-inner">C</div></div>
-          <p class="eyebrow">PIERWSZA WYPRAWA · PROTOTYP v0.0.6</p>
+          <p class="eyebrow">PIERWSZA WYPRAWA · PROTOTYP v0.0.7</p>
           <h1 id="menu-title">CALIO<span>BONK</span></h1>
           <div class="title-divider"><span></span>✦<span></span></div>
-          <p id="menu-desc" class="menu-desc">Na krańcu Calionu stoją zapomniane ruiny. Pokonuj skaczące Slime’y automatycznymi ciosami miecza i odkryj starą bramę.</p>
+          <p id="menu-desc" class="menu-desc">Na krańcu Calionu stoją zapomniane ruiny. Pokonuj skaczące Slime’y automatycznymi strzałami i odkryj starą bramę.</p>
           <button id="start-button" class="start-button" type="button"><span id="start-label">ROZPOCZNIJ EKSPLORACJĘ</span><span aria-hidden="true">➜</span></button>
           <div class="menu-controls"><span>WASD · PORUSZANIE</span><i></i><span>MYSZ · KAMERA</span><i></i><span>SHIFT · DOSKOK</span><i></i><span>SPACJA · SKOK</span></div>
           <p class="menu-tip" id="menu-tip">Po rozpoczęciu kliknij Esc, aby zatrzymać grę i uwolnić kursor.</p>

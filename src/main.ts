@@ -22,6 +22,11 @@ const notice=document.querySelector<HTMLElement>('#notice')!;
 const reticle=document.querySelector<HTMLElement>('#reticle')!;
 const slimeKills=document.querySelector<HTMLElement>('#slime-kills')!;
 const slimeAlive=document.querySelector<HTMLElement>('#slime-alive')!;
+const heroHealth=document.querySelector<HTMLElement>('#hero-health')!;
+const heroHealthFill=document.querySelector<HTMLElement>('#hero-health-fill')!;
+const damageFlash=document.querySelector<HTMLElement>('#damage-flash')!;
+const gameOver=document.querySelector<HTMLElement>('#game-over')!;
+const retryButton=document.querySelector<HTMLButtonElement>('#retry-button')!;
 
 try {
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -41,7 +46,8 @@ try {
   input.yaw=-.77;
   const camera=new CameraController(player,input,world);
   const clock=new THREE.Clock();
-  let elapsed=0,started=false,foundGate=false,notificationUntil=0;
+  let elapsed=0,started=false,foundGate=false,notificationUntil=0,gameOverShown=false;
+  retryButton.addEventListener('click',()=>window.location.reload());
 
   const showMenu=(paused:boolean):void=>{
     menu.classList.remove('hidden');
@@ -92,6 +98,11 @@ try {
     distanceText.textContent=foundGate?'Lokacja odkryta · dalsza eksploracja':`${Math.round(distance)} m do celu`;
     slimeKills.textContent=String(horde.kills);
     slimeAlive.textContent=String(horde.alive);
+    heroHealth.textContent=`${player.health} / 100`;
+    heroHealthFill.style.width=`${player.health}%`;
+    if(player.health<35) heroHealthFill.classList.add('critical'); else heroHealthFill.classList.remove('critical');
+    if(player.hitRecently) damageFlash.classList.add('visible'); else damageFlash.classList.remove('visible');
+    if(player.defeated && !gameOverShown){gameOverShown=true;gameOver.classList.add('visible');reticle.classList.remove('active');if(document.pointerLockElement) document.exitPointerLock();}
     const motion=player.speed;
     state.textContent=player.dashing?'Doskok':motion<.3?'W spoczynku':motion>2?'W marszu':'Powolny krok';
     dashStatus.textContent=player.dashCooldown>0 ? `Doskok · ${player.dashCooldown.toFixed(1)} s` : 'Doskok · gotowy';
@@ -105,8 +116,11 @@ try {
     elapsed+=dt;
     world.update(elapsed);
     if(input.active){
-      player.update(dt,input,world,elapsed);
-      horde.update(dt,player,camera.camera);
+      if(!player.defeated){
+        player.update(dt,input,world,elapsed);
+        horde.update(dt,player,camera.camera);
+
+      }
     }
     camera.update(dt);
     updateHud();
