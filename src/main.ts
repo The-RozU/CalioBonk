@@ -4,6 +4,7 @@ import { World } from './game/World';
 import { Input } from './game/Input';
 import { Player } from './game/Player';
 import { CameraController } from './game/CameraController';
+import { SlimeHorde } from './game/Slimes';
 
 const viewport=document.querySelector<HTMLDivElement>('#viewport')!;
 const menu=document.querySelector<HTMLDivElement>('#menu')!;
@@ -19,6 +20,8 @@ const distanceText=document.querySelector<HTMLElement>('#goal-distance')!;
 const goal=document.querySelector<HTMLElement>('#goal')!;
 const notice=document.querySelector<HTMLElement>('#notice')!;
 const reticle=document.querySelector<HTMLElement>('#reticle')!;
+const slimeKills=document.querySelector<HTMLElement>('#slime-kills')!;
+const slimeAlive=document.querySelector<HTMLElement>('#slime-alive')!;
 
 try {
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -33,6 +36,7 @@ try {
 
   const world=new World();
   const player=new Player(world.scene);
+  const horde=new SlimeHorde(world);
   const input=new Input(renderer.domElement);
   input.yaw=-.77;
   const camera=new CameraController(player,input,world);
@@ -57,6 +61,7 @@ try {
   input.onLockChange=(active:boolean):void=>{
     if(active){
       started=true;
+      horde.start(player.root.position);
       menu.classList.add('hidden');
       document.body.classList.add('in-game');
       reticle.classList.add('active');
@@ -85,6 +90,8 @@ try {
       notice.classList.add('visible');
     }
     distanceText.textContent=foundGate?'Lokacja odkryta · dalsza eksploracja':`${Math.round(distance)} m do celu`;
+    slimeKills.textContent=String(horde.kills);
+    slimeAlive.textContent=String(horde.alive);
     const motion=player.speed;
     state.textContent=player.dashing?'Doskok':motion<.3?'W spoczynku':motion>2?'W marszu':'Powolny krok';
     dashStatus.textContent=player.dashCooldown>0 ? `Doskok · ${player.dashCooldown.toFixed(1)} s` : 'Doskok · gotowy';
@@ -97,7 +104,10 @@ try {
     const dt=Math.min(clock.getDelta(),.045);
     elapsed+=dt;
     world.update(elapsed);
-    if(input.active) player.update(dt,input,world,elapsed);
+    if(input.active){
+      player.update(dt,input,world,elapsed);
+      horde.update(dt,player,camera.camera);
+    }
     camera.update(dt);
     updateHud();
     renderer.render(world.scene,camera.camera);

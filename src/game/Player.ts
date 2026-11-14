@@ -31,6 +31,9 @@ export class Player {
   readonly dashCooldownDuration = 1.4;
   private dashRemaining = 0;
   private readonly dashDuration = 0.23;
+  private attackTime = 0;
+  private readonly attackDuration = .43;
+  private attackHeading = 0;
   private dashX = 0;
   private dashZ = 0;
 
@@ -93,7 +96,18 @@ export class Player {
     this.scene.add(this.shadow);
   }
 
+  startAttack(target:THREE.Vector3):boolean {
+    if (this.dashing || this.attackTime > 0) return false;
+    const dx=target.x-this.root.position.x;
+    const dz=target.z-this.root.position.z;
+    if (Math.hypot(dx,dz)>3.3) return false;
+    this.attackHeading=Math.atan2(-dx,-dz);
+    this.attackTime=this.attackDuration;
+    return true;
+  }
+
   update(dt:number,input:Input,world:World,elapsed:number):void {
+    this.attackTime=Math.max(0,this.attackTime-dt);
     const axes=input.getAxes();
     const dx = -Math.sin(input.yaw)*axes.forward + Math.cos(input.yaw)*axes.right;
     const dz = -Math.cos(input.yaw)*axes.forward - Math.sin(input.yaw)*axes.right;
@@ -145,7 +159,9 @@ export class Player {
     }
     this.speed=Math.hypot(this.vx,this.vz);
 
-    if(this.speed>.15){
+    if(this.attackTime>0){
+      this.body.rotation.y+=angularDifference(this.body.rotation.y,this.attackHeading)*(1-Math.exp(-23*dt));
+    }else if(this.speed>.15){
       const desiredHeading=Math.atan2(-this.vx,-this.vz);
       this.body.rotation.y+=angularDifference(this.body.rotation.y,desiredHeading)*(1-Math.exp(-13*dt));
     }
@@ -163,6 +179,12 @@ export class Player {
     this.rightLeg.rotation.x=this.dashing?.52:this.airborne?.28:-swing;
     this.leftArm.rotation.x=this.dashing?-.68:this.airborne?-.28:-swing*.5;
     this.rightArm.rotation.x=this.dashing?-.72:this.airborne?-.2:swing*.37-.25;
+    this.rightArm.rotation.z=0;
+    if(this.attackTime>0){
+      const progress=1-this.attackTime/this.attackDuration;
+      this.rightArm.rotation.x=-1.55+progress*2.45;
+      this.rightArm.rotation.z=-Math.sin(progress*Math.PI)*.88;
+    }
     this.body.position.y=(this.airborne?0:Math.abs(Math.sin(this.animTime))*walk*.05) + Math.sin(elapsed*1.9)*.01;
     this.body.rotation.z=Math.sin(this.animTime)*.028*walk;
     this.body.rotation.x=THREE.MathUtils.lerp(this.body.rotation.x,this.dashing?-.33:0,1-Math.exp(-17*dt));

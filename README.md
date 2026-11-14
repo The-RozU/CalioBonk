@@ -2,9 +2,9 @@
 
 Gra 3D w świecie Calionu, inspirowana roguelike survival games. Projekt odrębny od **Calion Survivors**.
 
-**Wersja:** 0.0.5  
+**Wersja:** 0.0.6  
 **Technologia:** Three.js + TypeScript + Vite  
-**Zakres:** prototyp eksploracji 3D z doskokiem, bez walki
+**Zakres:** eksploracja 3D z doskokiem, skaczącymi Slime'ami i automatycznym atakiem
 
 ## Uruchomienie lokalnie
 
@@ -32,13 +32,17 @@ npm run preview
 | Spacja | Skok |
 | Esc | Pauza i uwolnienie kursora |
 
-## Zakres v0.0.5
+## Zakres v0.0.6
 
 - Leśna mapa 3D z ruinami i punktem docelowym.
 - Model postaci low-poly z animacją chodu, skoku i doskoku.
 - Kamera trzecioosobowa i kolizje terenowe.
 - HUD, menu startowe i pauza, znacznik celu i odkrycie lokacji.
 - Tekstury `.webp`.
+- Zielone, skaczące Slime'y podążają za graczem, mają po 36 HP i animację trafienia.
+- Automatyczne ciosy mieczem w zasięgu 3,2 m, 12 obrażeń co 0,78 s (3 trafienia do pokonania Slime'a).
+- Liczniki przeciwników i pokonanych Slime'ów; nowych wrogów pojawia się maksymalnie 6 naraz.
+- Slime'y na razie nie zadają obrażeń graczowi, aby skupić testy na sterowaniu i automatycznych atakach.
 - Zmiana nazwy projektu na **CalioBonk**, przygotowanie automatycznej publikacji na Pages z gałęzi `dev-mode`.
 
 ## GitHub Pages i gałęzie
@@ -55,4 +59,4 @@ Plik `vite.config.ts` ustawia docelową ścieżkę zasobów (`base: '/CalioBonk/
 
 ## Kolejny etap
 
-Przeciwnicy, automatyczny atak, obrażenia i HP w następnej wersji po naprawie publikacji.
+W kolejnej wersji: obrażenia gracza, śmierć i odrodzenie, czytelniejsze efekty trafień oraz EXP.
