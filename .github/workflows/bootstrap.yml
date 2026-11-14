@@ -44,6 +44,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
+          # GITHUB_TOKEN cannot push changes to workflow files.
+          # Keep pages.yml in the runner for validation, but commit it separately.
+          git reset -- .github/workflows/pages.yml
           if ! git diff --cached --quiet; then
             git commit -m "feat: import CalioBonk v0.0.3 game sources"
             git push origin HEAD:dev-mode
