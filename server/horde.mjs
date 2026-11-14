@@ -23,7 +23,7 @@ function spawnWave(room,active,emit){
   const count=horde.wave===1?FIRST_WAVE:Math.min(38,10+horde.wave*4);
   let spawned=0;
   for(let i=0;i<count&&horde.enemies.size<MAX_HORDE;i++){
-    const focus=active[(horde.nextId+i)%active.length];
+    const focus=active[(horde.wave+i)%active.length];
     spawn(horde,focus);spawned++;
   }
   horde.nextWave=WAVE_INTERVAL;
@@ -98,8 +98,8 @@ export function stepHorde(room,dt,emit){
         if(dx*dx+dz*dz<.8*.8){touching=true;break;}
       }
       if(touching){
-        player.health=Math.max(0,player.health-12);
-        player.hurtCooldown=.85;
+        player.health=Math.max(0,player.health-6);
+        player.hurtCooldown=1.2;
         emit({type:'playerHealth',id:player.id,hp:player.health});
         if(player.health===0){player.ready=false;emit({type:'playerDown',id:player.id});}
       }

@@ -53,6 +53,8 @@ try{
   const enemiesTwo=wait(two,'enemies');
   const announcementOne=wait(one,'waveStarted');
   const announcementTwo=wait(two,'waveStarted');
+  const shooters=new Set();
+  one.on('message',raw=>{const packet=JSON.parse(String(raw));if(packet.type==='arrowFired')shooters.add(packet.by);});
   const shotOne=wait(one,'arrowFired');
   const shotTwo=wait(two,'arrowFired');
   const hitOne=wait(one,'enemyHit');
@@ -68,7 +70,11 @@ try{
   assert.deepEqual(noticeA,noticeB,'both players see the same wave');
   assert.equal(noticeA.spawned,18);
   assert.deepEqual(arrowA,arrowB,'both players see the same arrow event');
-  assert.equal(arrowA.targetId,impactA.id,'server hit follows the projectile');
+  assert.ok(waveA.enemies.some(e=>e.id===arrowA.targetId),'arrow targets a known shared enemy');
+  assert.ok(waveA.enemies.some(e=>e.id===impactA.id),'server hit belongs to the shared horde');
+  await new Promise(resolve=>setTimeout(resolve,1100));
+  assert.ok(shooters.has(joinedOne.playerId),'first player shoots');
+  assert.ok(shooters.has(joinedTwo.playerId),'second player shoots');
   assert.deepEqual(impactA,impactB,'same impact for both players');
   const leaving=wait(one,'playerLeft');two.close();
   assert.equal((await leaving).id,joinedTwo.playerId);
