@@ -2,7 +2,7 @@
 
 Gra 3D w świecie Calionu, inspirowana roguelike survival games. Projekt odrębny od **Calion Survivors**.
 
-**Wersja:** 0.0.3  
+**Wersja:** 0.0.4  
 **Technologia:** Three.js + TypeScript + Vite  
 **Zakres:** prototyp eksploracji 3D z doskokiem, bez walki
 
@@ -32,7 +32,7 @@ npm run preview
 | Spacja | Skok |
 | Esc | Pauza i uwolnienie kursora |
 
-## Zakres v0.0.3
+## Zakres v0.0.4
 
 - Leśna mapa 3D z ruinami i punktem docelowym.
 - Model postaci low-poly z animacją chodu, skoku i doskoku.
