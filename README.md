@@ -154,4 +154,6 @@ Nowe typy wprowadzane stopniowo, bez zmiany zasad multiplayer ALFA:
 - Poprawiono pozę spoczynkową i animację strzału. Bez zmian mechaniki celowania, hitboxa, statystyk ani zasobów multiplayer.
 - Test statyczny kontroluje osadzenie broni i animacji, a kompilacja TypeScript/Vite w GitHub Actions sprawdza zgodność kodu.
 
-**v0.0.28:** skrypt kontroli automatycznie porównuje numer wersji w HUD z `package.json`, bez wpisywania kolejnego numeru na sztywno. Poprawki modelu z v0.0.26 bez zmian.
+**v0.0.27:** skrypt kontroli automatycznie porównuje numer wersji w HUD z `package.json`, bez wpisywania kolejnego numeru na sztywno. Poprawki modelu z v0.0.26 bez zmian.
+
+**v0.0.28:** poprawiono chwyt łuku: środek rękojeści znajduje się przy dłoni, a cięciwa jest napięta w poprzek łuku. Przy strzale lewa ręka wysuwa łuk, prawa zgina przedramię i przyciąga dłoń do twarzy; na czas naciągania pojawia się strzała, która znika przed wypuszczeniem pocisku. Ruch, skok, doskok, hitbox i logika ataku pozostają bez zmian.
