@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0b100e" />
     <meta name="description" content="CalioBonk. Prototyp mrocznej gry survival 3D w świecie Calionu." />
-    <title>CalioBonk | v0.0.18</title>
+    <title>CalioBonk | v0.0.19</title>
   </head>
   <body>
     <div id="app">
@@ -20,9 +20,10 @@
         </div>
         <div class="hud-right">
           <span class="stage-label"><span class="live-dot"></span> PROTOTYP 3D</span>
+          <span id="run-timer" class="run-timer" hidden>CZAS 00:00</span>
           <span id="wave-hud" class="wave-hud" hidden>FALA: OCZEKIWANIE</span>
           <span id="mp-indicator" class="mp-indicator" hidden>POKÓJ · 1/4</span>
-          <span class="version">ALFA v0.0.18</span>
+          <span class="version">ALFA v0.0.19</span>
         </div>
       </header>
 
@@ -38,7 +39,7 @@
 
       <section class="hero-health" aria-label="Zdrowie bohatera"><div class="hero-health-heading"><span>ŻYCIE ŁUCZNIKA</span><strong id="hero-health">100 / 100</strong></div><div class="hero-health-track"><div id="hero-health-fill"></div></div></section>
       <div id="damage-flash" class="damage-flash" aria-hidden="true"></div>
-      <div id="game-over" class="game-over" role="dialog" aria-modal="true"><div><small>WYPRAWA ZAKOŃCZONA</small><h2>Bohater poległ</h2><p>Slime’y przejęły pogranicze. Zbierz siły i spróbuj ponownie.</p><button id="retry-button" type="button">ROZPOCZNIJ PONOWNIE</button></div></div>
+      <div id="game-over" class="game-over" role="dialog" aria-modal="true"><div><small>WYPRAWA ZAKOŃCZONA</small><h2>Bohater poległ</h2><p>Slime’y przejęły pogranicze. Zbierz siły i spróbuj ponownie.</p><p id="run-result" class="run-result" hidden></p><button id="retry-button" type="button">ROZPOCZNIJ PONOWNIE</button></div></div>
       <section class="experience-hud" aria-label="Poziom i doświadczenie"><div><strong id="hero-level">POZIOM 1</strong><span id="hero-exp">0 / 15 EXP</span></div><div class="experience-track"><i id="hero-exp-fill"></i></div></section>
       <div id="level-up" class="level-up" role="status">AWANSOWANO · NOWY POZIOM</div>
       <div id="wave-banner" class="wave-banner" role="status" aria-live="polite"></div>
@@ -66,7 +67,7 @@
       <div id="menu" class="menu-scrim" role="dialog" aria-modal="true" aria-labelledby="menu-title">
         <div class="menu-panel">
           <div class="crest" aria-hidden="true"><div class="crest-inner">C</div></div>
-          <p class="eyebrow">PIERWSZA WYPRAWA · PROTOTYP v0.0.18</p>
+          <p class="eyebrow">PIERWSZA WYPRAWA · PROTOTYP v0.0.19</p>
           <h1 id="menu-title">CALIO<span>BONK</span></h1>
           <div class="title-divider"><span></span>✦<span></span></div>
           <p id="menu-desc" class="menu-desc">Na krańcu Calionu stoją zapomniane ruiny. Pokonuj skaczące Slime’y automatycznymi strzałami i odkryj starą bramę.</p>

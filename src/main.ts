@@ -52,6 +52,8 @@ const multiplayerLeave=document.querySelector<HTMLButtonElement>('#mp-leave')!;
 const multiplayerIndicator=document.querySelector<HTMLElement>('#mp-indicator')!;
 const waveHud=document.querySelector<HTMLElement>('#wave-hud')!;
 const waveBanner=document.querySelector<HTMLElement>('#wave-banner')!;
+const runTimer=document.querySelector<HTMLElement>('#run-timer')!;
+const runResult=document.querySelector<HTMLElement>('#run-result')!;
 
 try {
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -87,6 +89,16 @@ try {
   const camera=new CameraController(player,input,world);
   const clock=new THREE.Clock();
   let elapsed=0,started=false,foundGate=false,notificationUntil=0,gameOverShown=false,lastLevel=1,levelNoticeUntil=0,choosingUpgrade=false,waveBannerUntil=0;
+  const formatRunTime=(seconds:number):string=>{
+    const whole=Math.floor(seconds);
+    return String(Math.floor(whole/60)).padStart(2,'0')+':'+String(whole%60).padStart(2,'0');
+  };
+  horde.onWave=(wave,spawned)=>{
+    if(multiplayer.connected)return;
+    waveBanner.textContent='FALA '+wave+' · +'+spawned+' SLIME’ÓW';
+    waveBanner.classList.add('visible');
+    waveBannerUntil=elapsed+3;
+  };
   const debugEnabled=new URLSearchParams(location.search).get('debug')==='1';
   performanceOverlay.hidden=!debugEnabled;
   hordeButtons.forEach(button=>button.addEventListener('click',()=>{
@@ -218,7 +230,15 @@ upgradeCards.forEach(button=>button.addEventListener('click',()=>{
     distanceText.textContent=foundGate?'Lokacja odkryta · dalsza eksploracja':`${Math.round(distance)} m do celu`;
     slimeKills.textContent=String(multiplayer.connected?sharedHorde.kills:horde.kills);
     slimeAlive.textContent=String(multiplayer.connected?sharedHorde.alive:horde.alive);
-    if(multiplayer.connected){waveHud.hidden=false;waveHud.textContent=sharedHorde.wave?'FALA '+sharedHorde.wave+' · '+sharedHorde.alive+' WROGÓW':'FALA: OCZEKIWANIE';}
+    if(multiplayer.connected){
+      waveHud.hidden=false;
+      waveHud.textContent=sharedHorde.wave?'FALA '+sharedHorde.wave+' · '+sharedHorde.alive+' WROGÓW':'FALA: OCZEKIWANIE';
+    }else{
+      waveHud.hidden=!started;
+      if(started)waveHud.textContent='FALA '+horde.wave+' · NAST. '+horde.nextWaveIn+' s';
+    }
+    runTimer.hidden=multiplayer.connected||!started;
+    if(!runTimer.hidden)runTimer.textContent='CZAS '+formatRunTime(horde.runTime);
     if(waveBannerUntil>0&&elapsed>waveBannerUntil){waveBanner.classList.remove('visible');waveBannerUntil=0;}
     levelText.textContent=`POZIOM ${horde.level}`;
     const attackNames=['🏹 Łuk',...(player.stats.tripleLevel?['➶ Potrójny']:[]),...(player.stats.poisonLevel?['☠ Trucizna']:[]),...(player.stats.pierceLevel?['↠ Przebicie']:[])];
@@ -231,7 +251,17 @@ upgradeCards.forEach(button=>button.addEventListener('click',()=>{
     heroHealthFill.style.width=`${player.health}%`;
     if(player.health<35) heroHealthFill.classList.add('critical'); else heroHealthFill.classList.remove('critical');
     if(player.hitRecently) damageFlash.classList.add('visible'); else damageFlash.classList.remove('visible');
-    if(player.defeated && !gameOverShown){gameOverShown=true;gameOver.classList.add('visible');reticle.classList.remove('active');if(document.pointerLockElement) document.exitPointerLock();}
+    if(player.defeated && !gameOverShown){
+      gameOverShown=true;
+      if(multiplayer.connected)runResult.hidden=true;
+      else {
+        runResult.hidden=false;
+        runResult.textContent='Czas: '+formatRunTime(horde.runTime)+' · Fala: '+horde.wave+' · Pokonane Slime’y: '+horde.kills;
+      }
+      gameOver.classList.add('visible');
+      reticle.classList.remove('active');
+      if(document.pointerLockElement)document.exitPointerLock();
+    }
     const motion=player.speed;
     state.textContent=player.dashing?'Doskok':motion<.3?'W spoczynku':motion>2?'W marszu':'Powolny krok';
     dashStatus.textContent=player.dashCooldown>0 ? `Doskok · ${player.dashCooldown.toFixed(1)} s` : 'Doskok · gotowy';

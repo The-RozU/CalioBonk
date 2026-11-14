@@ -2,7 +2,7 @@
 
 Gra 3D w świecie Calionu, inspirowana roguelike survival games. Projekt odrębny od **Calion Survivors**.
 
-**Wersja:** 0.0.18  
+**Wersja:** 0.0.19  
 **Technologia:** Three.js + TypeScript + Vite  
 **Zakres:** eksploracja 3D z doskokiem, skaczącymi Slime'ami i automatyczną walką dystansową
 
@@ -32,7 +32,7 @@ npm run preview
 | Spacja | Skok |
 | Esc | Pauza i uwolnienie kursora |
 
-## Zakres v0.0.18
+## Zakres v0.0.19
 
 - Leśna mapa 3D z ruinami i punktem docelowym.
 - Model łucznika low-poly z łukiem, kołczanem i animacją naciągania; zachowano chód, skok i doskok.
@@ -60,7 +60,9 @@ npm run preview
 - Oba warianty korzystają z tej samej logiki ruchu, skoków, HP, obrażeń, trucizny, EXP i hitboxów.
 - Panel `?debug=1` udostępnia limity testowe hord: 25, 50, 100, 200 i 300 Slime’ów.
 - Kolizje świata używają indeksu przestrzennego; pociski są ponownie wykorzystywane, liczby obrażeń mają limit, a bliskie kryształy łączą EXP bez strat.
-- Liczniki przeciwników i pokonanych Slime'ów; nowych wrogów pojawia się maksymalnie 6 naraz.
+- **Solo v0.0.19:** fale Slime’ów zamiast pojedynczych spawnów (7, 10, 13, 16 itd., maksymalnie 42 nowe potwory na falę), kolejne co 25 sekund lub szybciej po wybiciu całej grupy; maksymalna liczba aktywnych mobów rośnie wraz z falą do 120.
+- **Solo v0.0.19:** miękkie odpychanie Slime’ów z indeksem przestrzennym, dystansem około 0,72 jednostki i bez sztywnych kolizji, zarówno dla sprite’ów, jak i modelu 3D.
+- **Solo v0.0.19:** zegar przetrwania MM:SS, numer fali i czas do kolejnej grupy w HUD. Pauza i wybieranie kart w Solo zatrzymują zegar i potwory; ekran śmierci pokazuje czas, falę oraz zabójstwa.
 - Zmiana nazwy projektu na **CalioBonk**, przygotowanie automatycznej publikacji na Pages z gałęzi `dev-mode`.
 
 ## GitHub Pages i gałęzie
@@ -106,3 +108,9 @@ Test fal i pocisków: npm run test:horde
 Test protokołu dwóch klientów: npm run test:multiplayer
 
 Dostosowanie v0.0.18: fale rozdzielane są między aktywnych graczy, a obrażenia kontaktowe obniżono do 6 na 1,2 s, aby testowanie rosnących hord było możliwe. Test integracyjny weryfikuje strzały obu graczy bez zakładania kolejności trafień.
+
+## Testy rozgrywki Solo v0.0.19
+
+Uruchom `npm run test:solo`, aby sprawdzić narastanie fal, limity aktywnych mobów, brak odpychania odległych Slime’ów i rozdzielenie 250 nałożonych sprite’ów. Mechanika jest dostępna w Solo bez uruchamiania serwera. Multiplayer ALFA pozostawiono bez zmian i nadal wymaga lokalnego serwera; osobne testy protokołu online to `npm run test:multiplayer` i `npm run test:horde`.
+
+Pierwsza fala: 7 Slime’ów, druga: 10, trzecia: 13. Fale nadchodzą co około 25 sekund czasu aktywnej rozgrywki; gdy wszystkie wcześniejsze potwory zginą, kolejna grupa pojawi się po krótkim odpoczynku. Licznik czasu nie nalicza pauzy ani wyboru ulepszenia. Panel `?debug=1` nadal pozwala testować 25–300 wrogów, bez wpływania na zwykły balans Solo.

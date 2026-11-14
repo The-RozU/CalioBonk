@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { groundHeight } from './Terrain';
+import {SOLO_WAVE_INTERVAL,SOLO_CLEAR_DELAY,soloWaveSize,soloWaveCap,slimeSeparation} from './SoloSurvival.mjs';
 import type { World } from './World';
 import type { Player } from './Player';
 
@@ -256,7 +257,7 @@ export class SlimeHorde {
   private readonly effects: StrikeEffect[] = [];
   private readonly arrows: ArrowFlight[] = [];
   private readonly arrowPool:THREE.Group[]=[];
-  private maxAlive=6;
+  private debugLimit:number|null=null;
   private readonly maxDamageNumbers=24;
   private readonly experienceGems: ExperienceGem[] = [];
   private readonly essenceStarPool: THREE.Sprite[] = [];
@@ -273,16 +274,25 @@ export class SlimeHorde {
   private pierceCooldown=2.2;
   private readonly damageNumbers: Array<{sprite:THREE.Sprite;age:number}> = [];
   private seed = 72819;
-  private spawnDelay = 2.4;
   private cooldown = 0;
   private started = false;
+  private waveTimeLeft=0;
+  private quietTime=0;
+  wave=0;
+  runTime=0;
+  onWave:(wave:number,spawned:number)=>void=()=>{};
   kills = 0;
 
   constructor(private readonly world: World) {}
 
   get alive(): number { return this.enemies.filter(enemy => !enemy.dead).length; }
   get renderMode():SlimeRenderMode { return SLIME_RENDER_MODE; }
-  setTestLimit(limit:number,hero:THREE.Vector3):void { this.maxAlive=[25,50,100,200,300].includes(limit)?limit:6; while(this.alive<this.maxAlive){const before=this.enemies.length;this.spawn(hero);if(this.enemies.length===before)break;} }
+  setTestLimit(limit:number,hero:THREE.Vector3):void {
+    if(![25,50,100,200,300].includes(limit))return;
+    this.debugLimit=limit;
+    while(this.alive<limit){if(!this.spawn(hero))break;}
+  }
+  get nextWaveIn():number{return Math.max(0,Math.ceil(this.waveTimeLeft));}
   get projectileCount():number { return this.arrows.length; }
   get effectCount():number { return this.effects.length+this.damageNumbers.length; }
   get crystalCount():number { return this.experienceGems.length; }
@@ -293,20 +303,58 @@ export class SlimeHorde {
   }
 
   start(hero: THREE.Vector3): void {
-    if (this.started) return;
-    this.started = true;
-    for (let i = 0; i < 3; i++) this.spawn(hero);
+    if(this.started)return;
+    this.started=true;
+    this.beginWave(hero);
   }
 
-  private spawn(hero: THREE.Vector3): void {
-    for (let attempt = 0; attempt < 28; attempt++) {
-      const angle = this.random() * Math.PI * 2;
-      const distance = 7.2 + this.random() * 4.5;
-      const x = hero.x + Math.sin(angle) * distance;
-      const z = hero.z + Math.cos(angle) * distance;
-      if (this.world.collides(x, z, 1.1)) continue;
-      this.enemies.push(new Slime(this.world.scene, x, z, this.random()));
-      return;
+  private beginWave(hero:THREE.Vector3):void {
+    const upcoming=this.wave+1;
+    const cap=this.debugLimit??soloWaveCap(upcoming);
+    const slots=Math.max(0,cap-this.alive);
+    if(slots===0){this.waveTimeLeft=3;return;}
+    const requested=Math.min(slots,soloWaveSize(upcoming));
+    let spawned=0;
+    for(let i=0;i<requested;i++)if(this.spawn(hero))spawned++;
+    if(spawned===0){this.waveTimeLeft=3;return;}
+    this.wave=upcoming;
+    this.waveTimeLeft=SOLO_WAVE_INTERVAL;
+    this.quietTime=0;
+    this.onWave(this.wave,spawned);
+  }
+
+  private spawn(hero:THREE.Vector3):boolean {
+    for(let attempt=0;attempt<36;attempt++){
+      const angle=this.random()*Math.PI*2;
+      const distance=9+this.random()*7.5;
+      const x=hero.x+Math.sin(angle)*distance;
+      const z=hero.z+Math.cos(angle)*distance;
+      if(this.world.collides(x,z,1.0))continue;
+      if(this.enemies.some(enemy=>!enemy.dead&&
+        (enemy.position.x-x)**2+(enemy.position.z-z)**2<.8*.8))continue;
+      this.enemies.push(new Slime(this.world.scene,x,z,this.random()));
+      return true;
+    }
+    return false;
+  }
+
+  private separateSlimes(dt:number):void {
+    const active=this.enemies.filter(enemy=>!enemy.dead);
+    if(active.length<2)return;
+    const corrections=slimeSeparation(active.map(enemy=>enemy.position),dt);
+    for(let i=0;i<active.length;i++){
+      const enemy=active[i]!;
+      const correction=corrections[i]!;
+      if(Math.abs(correction.x)+Math.abs(correction.z)<.00001)continue;
+      const position=enemy.position;
+      const oldGround=groundHeight(position.x,position.z);
+      const nextX=position.x+correction.x;
+      const nextZ=position.z+correction.z;
+      if(!this.world.collides(nextX,position.z,.23))position.x=nextX;
+      if(!this.world.collides(position.x,nextZ,.23))position.z=nextZ;
+      const ground=groundHeight(position.x,position.z);
+      position.y+=ground-oldGround;
+      enemy.shadow.position.set(position.x,ground+.025,position.z);
     }
   }
 
@@ -374,7 +422,9 @@ export class SlimeHorde {
 
   update(dt: number, player: Player, camera: THREE.Camera): void {
     if (!this.started) return;
-    const hero = player.root.position;
+    const hero=player.root.position;
+    this.runTime+=dt;
+    this.waveTimeLeft=Math.max(0,this.waveTimeLeft-dt);
     this.contactCooldown=Math.max(0,this.contactCooldown-dt);
 
     for (let i = this.enemies.length - 1; i >= 0; i--) {
@@ -383,6 +433,7 @@ export class SlimeHorde {
       if(enemy.dead&&!enemy.counted)this.registerKill(enemy);
       if (enemy.finished) this.enemies.splice(i, 1);
     }
+    this.separateSlimes(dt);
     for (let i = this.effects.length - 1; i >= 0; i--) {
       const effect = this.effects[i]!;
       effect.age += dt;
@@ -491,10 +542,10 @@ export class SlimeHorde {
     if(player.stats.tripleLevel>0&&this.tripleCooldown===0){fire('triple',3);this.tripleCooldown=Math.max(1.1,2.2-player.stats.tripleLevel*.12);}
     if(player.stats.poisonLevel>0&&this.poisonCooldown===0){fire('poison');this.poisonCooldown=Math.max(1.8,3.3-player.stats.poisonLevel*.18);}
     if(player.stats.pierceLevel>0&&this.pierceCooldown===0){fire('piercing',1,player.stats.pierceLevel);this.pierceCooldown=Math.max(1.5,2.6-player.stats.pierceLevel*.15);}
-    this.spawnDelay -= dt;
-    if (this.spawnDelay <= 0 && this.alive < this.maxAlive) {
-      this.spawn(hero);
-      this.spawnDelay = 2.7;
-    }
+    if(this.alive===0){
+      this.quietTime+=dt;
+      if(this.quietTime>=SOLO_CLEAR_DELAY)this.waveTimeLeft=0;
+    }else this.quietTime=0;
+    if(this.waveTimeLeft<=0)this.beginWave(hero);
   }
 }

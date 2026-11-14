@@ -8,14 +8,14 @@ const read=(name)=>readFileSync(join(root,name),'utf8');
 const required=[
   'index.html','src/main.ts','src/style.css','src/game/CameraController.ts',
   'src/game/Input.ts','src/game/Player.ts','src/game/Terrain.ts','src/game/World.ts',
-  'src/game/Slimes.ts','src/network/Multiplayer.ts','src/network/SharedHorde.ts',
-  'server/index.mjs','server/test.mjs','server/horde.mjs','server/horde.test.mjs',
+  'src/game/Slimes.ts','src/game/SoloSurvival.mjs','src/game/SoloSurvival.d.mts','src/network/Multiplayer.ts','src/network/SharedHorde.ts',
+  'server/index.mjs','server/test.mjs','server/horde.mjs','server/horde.test.mjs','scripts/test-solo.mjs',
   'public/assets/textures/ground.webp','public/assets/textures/stone.webp',
   'public/assets/textures/noise.webp','.github/workflows/pages.yml',
 ];
 for(const path of required) assert(existsSync(join(root,path)),`Brakuje pliku: ${path}`);
 const pkg=JSON.parse(read('package.json'));
-assert.equal(pkg.version,'0.0.18','Nieprawidłowa wersja gry');
+assert.equal(pkg.version,'0.0.19','Nieprawidłowa wersja gry');
 assert.match(read('src/game/Input.ts'),/requestPointerLock/);
 assert.match(read('src/game/Player.ts'),/ShiftLeft/);
 assert.match(read('src/game/Player.ts'),/dashCooldown/);
@@ -40,6 +40,13 @@ assert.match(read('src/game/Slimes.ts'),/type AttackKind/);
 assert.match(read('src/game/Slimes.ts'),/new THREE.SphereGeometry\(\.66,8,6\)/);
 assert.match(read('src/game/Slimes.ts'),/CanvasTexture/);
 assert.match(read('src/game/Slimes.ts'),/setTestLimit/);
+assert.match(read('src/game/Slimes.ts'),/beginWave/);
+assert.match(read('src/game/Slimes.ts'),/separateSlimes/);
+assert.match(read('src/game/Slimes.ts'),/slimeSeparation/);
+assert.match(read('src/game/SoloSurvival.mjs'),/soloWaveSize/);
+assert.match(read('src/main.ts'),/horde\.runTime/);
+assert.match(read('index.html'),/id="run-timer"/);
+assert.match(read('index.html'),/id="run-result"/);
 assert.match(read('src/game/Slimes.ts'),/maxDamageNumbers=24/);
 assert.match(read('src/game/Slimes.ts'),/arrowPool/);
 assert.match(read('src/game/World.ts'),/collisionGrid/);

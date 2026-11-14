@@ -55,3 +55,10 @@
 .wave-banner{position:absolute;left:50%;top:22%;transform:translate(-50%,-9px);z-index:8;opacity:0;pointer-events:none;white-space:nowrap;padding:15px 27px;border:1px solid #cda86b;background:#101d17e8;color:#f5dba4;font:700 16px Georgia,serif;letter-spacing:1.6px;box-shadow:0 12px 35px #0008;transition:opacity .28s,transform .28s}
 .wave-banner.visible{opacity:1;transform:translate(-50%,0)}
 @media(max-width:700px){.wave-hud{font-size:8px;padding:6px}.wave-banner{top:25%;font-size:11px;padding:10px}}
+
+
+/* Solo survival: compact paused-with-game clock and run result. */
+.run-timer{padding:8px 11px;border:1px solid #94bca077;background:#13291fdc;color:#caeed4;font:700 10px ui-monospace,monospace;letter-spacing:1.2px;white-space:nowrap}
+.run-timer[hidden],.run-result[hidden]{display:none!important}
+.game-over .run-result{color:#efdda8;font:600 14px Georgia,serif;letter-spacing:.4px;border-top:1px solid #b8a47b45;padding-top:15px;margin-top:14px}
+@media(max-width:700px){.run-timer{font-size:8px;padding:6px}.hud-right{gap:5px}}
