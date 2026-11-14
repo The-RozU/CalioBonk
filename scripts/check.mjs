@@ -16,7 +16,7 @@ const required=[
 ];
 for(const path of required) assert(existsSync(join(root,path)),`Brakuje pliku: ${path}`);
 const pkg=JSON.parse(read('package.json'));
-assert.equal(pkg.version,'0.0.23','Nieprawidłowa wersja gry');
+assert.equal(pkg.version,'0.0.24','Nieprawidłowa wersja gry');
 assert.match(read('src/game/Input.ts'),/requestPointerLock/);
 assert.match(read('src/game/Player.ts'),/ShiftLeft/);
 assert.match(read('src/game/Player.ts'),/dashCooldown/);
@@ -25,8 +25,8 @@ assert.match(read('src/game/CameraController.ts'),/this.camera.position.copy\(th
 assert.match(read('src/game/CameraController.ts'),/addEventListener\('wheel'/);
 assert.match(read('src/game/CameraController.ts'),/this.distance=THREE.MathUtils.clamp/);
 assert.match(read('src/game/CameraController.ts'),/3\.2,14/);
-assert.match(read('src/game/Player.ts'),/this.leftArm.rotation.x=\.95/);
-assert.match(read('src/game/Player.ts'),/this.rightArm.rotation.x=\.62/);
+assert.match(read('src/game/Player.ts'),/this.leftArm.rotation.x=\.28/);
+assert.match(read('src/game/Player.ts'),/this.rightArm.rotation.x=\.22-Math.sin\(progress\*Math.PI\)\*\.62/);
 assert.match(read('src/game/Player.ts'),/CubicBezierCurve3/);
 assert.match(read('src/game/Slimes.ts'),/aimPosition.clone\(\).sub\(origin\)/);
 assert.match(read('src/game/Slimes.ts'),/origin.distanceTo\(aimPosition\)/);
