@@ -2,7 +2,7 @@
 
 Gra 3D w świecie Calionu, inspirowana roguelike survival games. Projekt odrębny od **Calion Survivors**.
 
-**Wersja:** 0.0.22  
+**Wersja:** 0.0.23  
 **Technologia:** Three.js + TypeScript + Vite  
 **Zakres:** eksploracja 3D z doskokiem, skaczącymi Slime'ami i automatyczną walką dystansową
 
@@ -32,7 +32,7 @@ npm run preview
 | Spacja | Skok |
 | Esc | Pauza i uwolnienie kursora |
 
-## Zakres v0.0.22
+## Zakres v0.0.23
 
 - Leśna mapa 3D z ruinami i punktem docelowym.
 - Model łucznika low-poly z łukiem, kołczanem i animacją naciągania; zachowano chód, skok i doskok.
@@ -143,3 +143,5 @@ Nowe typy wprowadzane stopniowo, bez zmiany zasad multiplayer ALFA:
 - Zasięg podstawowego i specjalnych ataków łucznika wynosi bazowo 13,5 jednostki; karta zasięgu nadal go zwiększa. Wszystkie Slime’y aktywnie podążają w kierunku postaci, niezależnie od odległości, i próbują obejść przeszkody.
 - Lewa i prawa część HUD mają niezależne pionowe kolumny, więc panele nie powinny na siebie nachodzić. Zamiast fali HUD Solo wyświetla czas do następnej serii.
 - Multiplayer pozostaje eksperymentalny i **nie jest objęty** nowym systemem spawnów. Nie wymaga uruchamiania serwera przy grze Solo.
+
+**v0.0.23:** porządkowa poprawka kompilacji strict TypeScript: usunięto nieużywane pole trybu debugowania przywołań. Wszystkie zmiany rozgrywki z v0.0.22 pozostają aktywne.

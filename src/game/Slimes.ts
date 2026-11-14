@@ -329,7 +329,6 @@ export class SlimeHorde {
   private toxicDamageCooldown=0;
   private readonly arrows: ArrowFlight[] = [];
   private readonly arrowPool:THREE.Group[]=[];
-  private debugLimit:number|null=null;
   private readonly summoning:Array<{light:SummoningLight;count:number;tier:number;released:boolean}>=[];
   private spawnCooldown=0;
   private lastAnnouncedTier=1;
@@ -361,7 +360,6 @@ export class SlimeHorde {
   get renderMode():SlimeRenderMode { return SLIME_RENDER_MODE; }
   setTestLimit(limit:number,hero:THREE.Vector3):void {
     if(![25,50,100,200,300].includes(limit))return;
-    this.debugLimit=limit;
     while(this.alive<limit){if(!this.spawn(hero))break;}
   }
   get nextBatchIn():number{return Math.max(0,Math.ceil(this.spawnCooldown));}
