@@ -2,7 +2,7 @@
 
 Gra 3D w świecie Calionu, inspirowana roguelike survival games. Projekt odrębny od **Calion Survivors**.
 
-**Wersja:** 0.0.4  
+**Wersja:** 0.0.5  
 **Technologia:** Three.js + TypeScript + Vite  
 **Zakres:** prototyp eksploracji 3D z doskokiem, bez walki
 
@@ -32,7 +32,7 @@ npm run preview
 | Spacja | Skok |
 | Esc | Pauza i uwolnienie kursora |
 
-## Zakres v0.0.4
+## Zakres v0.0.5
 
 - Leśna mapa 3D z ruinami i punktem docelowym.
 - Model postaci low-poly z animacją chodu, skoku i doskoku.
@@ -51,8 +51,8 @@ Docelowe repozytorium: `The-RozU/CalioBonk` (osobne od `Calion Survivors`).
 4. Plik `.github/workflows/pages.yml` uruchomi build i wdrożenie z `dev-mode` (także przy kolejnych zmianach w tej gałęzi).
 5. Gdy workflow zakończy się sukcesem, adres gry powinien mieć postać **https://the-rozu.github.io/CalioBonk/**, jeśli GitHub Pages jest włączony i repozytorium jest publiczne.
 
-Plik `vite.config.ts` ustawia względne ścieżki zasobów (`base: './'`), co pozwala uruchomić grę w podkatalogu GitHub Pages. Workflow instaluje pakiety npm, kompiluje projekt i publikuje katalog `dist`; nie publikuje surowego `index.html`.
+Plik `vite.config.ts` ustawia docelową ścieżkę zasobów (`base: '/CalioBonk/'`), a skrypt `scripts/verify-dist.mjs` sprawdza, czy zbudowany `index.html` odwołuje się do istniejących plików CSS i JavaScript. Workflow instaluje pakiety npm, kompiluje projekt i publikuje katalog `dist`; nie publikuje surowego `index.html`.
 
 ## Kolejny etap
 
-Przeciwnicy, automatyczny atak, obrażenia i HP w v0.0.4.
+Przeciwnicy, automatyczny atak, obrażenia i HP w następnej wersji po naprawie publikacji.
