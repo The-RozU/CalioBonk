@@ -9,6 +9,7 @@ const required=[
   'index.html','src/main.ts','src/style.css','src/game/CameraController.ts',
   'src/game/Input.ts','src/game/Player.ts','src/game/Terrain.ts','src/game/World.ts',
   'src/game/Slimes.ts','src/game/SummoningLight.ts','src/game/SoloSurvival.mjs','src/game/SoloSurvival.d.mts',
+  'src/game/UpgradeDraft.mjs','src/game/UpgradeDraft.d.mts','scripts/test-upgrades.mjs',
   'src/game/SlimeVariants.mjs','src/game/SlimeVariants.d.mts','scripts/test-variants.mjs','src/network/Multiplayer.ts','src/network/SharedHorde.ts',
   'server/index.mjs','server/test.mjs','server/horde.mjs','server/horde.test.mjs','scripts/test-solo.mjs',
   'public/assets/textures/ground.webp','public/assets/textures/stone.webp',
@@ -16,7 +17,7 @@ const required=[
 ];
 for(const path of required) assert(existsSync(join(root,path)),`Brakuje pliku: ${path}`);
 const pkg=JSON.parse(read('package.json'));
-assert.equal(pkg.version,'0.0.28','Nieprawidłowa wersja gry');
+assert.equal(pkg.version,'0.0.29','Nieprawidłowa wersja gry');
 assert.match(read('src/game/Input.ts'),/requestPointerLock/);
 assert.match(read('src/game/Player.ts'),/ShiftLeft/);
 assert.match(read('src/game/Player.ts'),/dashCooldown/);
@@ -32,7 +33,7 @@ assert.match(read('src/game/Player.ts'),/this.drawArrow.visible=progress<\.58/);
 assert.match(read('src/game/Player.ts'),/bow grip is centered exactly on the left hand/);
 assert.match(read('src/game/Player.ts'),/this.bow.rotation.x=-this.leftArm.rotation.x/);
 assert.match(read('src/game/Player.ts'),/full hood encloses the skull/);
-assert.match(read('index.html'),/ALFA v0\.0\.28/);
+assert.match(read('index.html'),/ALFA v0\.0\.29/);
 assert.match(read('src/game/Player.ts'),/bow grip is centered exactly on the left hand/);
 assert.match(read('src/game/Player.ts'),/this.bow.position.set\(-\.015,-\.73,-\.055-draw\*\.075\)/);
 assert.match(read('src/game/Player.ts'),/this.bow.rotation.x=-this.leftArm.rotation.x/);
@@ -88,6 +89,12 @@ assert.match(read('src/main.ts'),/activeAttacks/);
 assert.match(read('src/game/Player.ts'),/tripleLevel:0/);
 assert.match(read('src/game/Player.ts'),/readonly stats=/);
 assert.match(read('src/main.ts'),/openUpgradeChoice/);
+assert.match(read('src/main.ts'),/drawUpgradeCards/);
+assert.match(read('src/main.ts'),/rerollsLeft=1/);
+assert.match(read('src/game/UpgradeDraft.mjs'),/rollRarity/);
+assert.match(read('src/game/UpgradeDraft.mjs'),/ownedAttacks/);
+assert.match(read('index.html'),/id="reroll-upgrades"/);
+assert.match(read('index.html'),/card-rarity/);
 assert.match(read('index.html'),/upgrade-screen/);
 assert.match(read('src/game/Slimes.ts'),/type AttackKind/);
 assert.match(read('src/game/Slimes.ts'),/applyPoison/);

@@ -88,3 +88,34 @@
   .hud-group .experience-hud{padding:8px}
   .hud-group .hero-health{padding:8px}
 }
+
+
+/* v0.0.29: meaningful rarity tiers and one per-run draft reroll. */
+.upgrade-panel{max-height:calc(100vh - 38px);overflow-y:auto;scrollbar-width:thin}
+.upgrade-card{position:relative;overflow:hidden;gap:11px}
+.upgrade-card[hidden]{display:none!important}
+.upgrade-card .card-rarity{align-self:stretch;padding:6px 10px;font:800 10px system-ui;
+  letter-spacing:2px;border-bottom:1px solid currentColor;text-align:center}
+.upgrade-card[data-rarity="common"]{border-color:#7c9885;background:linear-gradient(155deg,#293c2d,#19241d)}
+.upgrade-card[data-rarity="rare"]{border-color:#72a8da;background:linear-gradient(155deg,#24394b,#17232e)}
+.upgrade-card[data-rarity="epic"]{border-color:#b68ae9;background:linear-gradient(155deg,#3e2d4c,#201b2d)}
+.upgrade-card[data-rarity="legendary"]{border-color:#e9c15e;background:linear-gradient(155deg,#504026,#292117);
+  box-shadow:inset 0 0 34px #d3a74a24,0 0 24px #b1842926}
+.upgrade-card[data-rarity="common"] .card-rarity{color:#b1c8a9}
+.upgrade-card[data-rarity="rare"] .card-rarity{color:#8ec9f3}
+.upgrade-card[data-rarity="epic"] .card-rarity{color:#c7a4ff}
+.upgrade-card[data-rarity="legendary"] .card-rarity{color:#ffd87d}
+.upgrade-card:focus-visible{outline:2px solid #f0d891;outline-offset:3px}
+.draft-controls{display:flex;justify-content:center;align-items:center;gap:15px;flex-wrap:wrap;margin-top:18px}
+#reroll-upgrades{padding:11px 18px;border:1px solid #c1a66d;background:linear-gradient(140deg,#554228,#312819);
+  color:#f2e1b6;font-size:11px;letter-spacing:1.4px;font-weight:800;cursor:pointer}
+#reroll-upgrades:hover:not(:disabled){background:#685338}
+#reroll-upgrades:disabled{opacity:.45;cursor:not-allowed}
+.draft-controls>span{font-size:11px;color:#c8c6b7}
+.draft-controls strong{color:#f4dfae}
+@media(max-width:650px){
+  .upgrade-card{min-height:124px;gap:7px}
+  .upgrade-card .card-rarity{font-size:9px;padding:3px}
+  .upgrade-panel h2{margin:8px 0 14px}
+  .draft-controls{gap:8px}
+}

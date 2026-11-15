@@ -2,7 +2,7 @@
 
 Gra 3D w świecie Calionu, inspirowana roguelike survival games. Projekt odrębny od **Calion Survivors**.
 
-**Wersja:** 0.0.28  
+**Wersja:** 0.0.29  
 **Technologia:** Three.js + TypeScript + Vite  
 **Zakres:** eksploracja 3D z doskokiem, skaczącymi Slime'ami i automatyczną walką dystansową
 
@@ -157,3 +157,14 @@ Nowe typy wprowadzane stopniowo, bez zmiany zasad multiplayer ALFA:
 **v0.0.27:** skrypt kontroli automatycznie porównuje numer wersji w HUD z `package.json`, bez wpisywania kolejnego numeru na sztywno. Poprawki modelu z v0.0.26 bez zmian.
 
 **v0.0.28:** poprawiono chwyt łuku: środek rękojeści znajduje się przy dłoni, a cięciwa jest napięta w poprzek łuku. Przy strzale lewa ręka wysuwa łuk, prawa zgina przedramię i przyciąga dłoń do twarzy; na czas naciągania pojawia się strzała, która znika przed wypuszczeniem pocisku. Ruch, skok, doskok, hitbox i logika ataku pozostają bez zmian.
+
+
+## v0.0.29: rzadkości kart i jedno przelosowanie na wyprawę
+
+- Po awansie losujesz **3 różne karty**, z ograniczeniem maksymalnie dwóch rodzajów odblokowanych ataków specjalnych (jak dotychczas).
+- Każda karta ma rzadkość: **Zwykła** (1 poziom), **Rzadka** (2), **Epicka** (3) albo **Legendarna** (4). Wartość bonusu i ranga ulepszenia rosną o rzeczywistą liczbę przyznanych poziomów, najwyżej do poziomu 5. Jeśli karta dobiłaby do limitu, wyświetlana rzadkość odzwierciedla realną siłę.
+- Szanse zależą lekko od poziomu bohatera. Na pierwszym poziomie wynoszą około 65%/27%/7%/1%; przy wysokim poziomie około 45%/36%/16%/3%.
+- Masz **jedno przelosowanie na całą wyprawę**. Karty po przelosowaniu starają się nie powtarzać, o ile jest dostatecznie dużo dostępnych ulepszeń. Przelosowanie nie zużywa awansu.
+- Dostępna jest również nowa, powtarzalna karta **Zapas Bandaży**: +5 maks. HP i +10 aktualnego HP za każdy przyznany poziom. Zapobiega pustemu ekranowi wyboru w bardzo długich rundach.
+- Karty mają własne kolory rzadkości i etykiety rang. Pauza wyboru w Solo nie wpływa na zegar przetrwania. Multiplayer oraz modele, animacje i mechanika łuku nie były w tej wersji zmieniane.
+- Testy losowania, rzadkości, limitów aktywnych umiejętności i przelosowania: npm run test:upgrades.

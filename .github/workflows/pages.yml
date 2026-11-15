@@ -35,6 +35,8 @@ jobs:
         run: npm run test:solo
       - name: Test Slime variants and progression
         run: npm run test:variants
+      - name: Test upgrade rarities and rerolls
+        run: npm run test:upgrades
       - name: Test horde waves and shots
         run: npm run test:horde
       - name: Test multiplayer protocol

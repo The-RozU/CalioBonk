@@ -7,6 +7,8 @@ import { CameraController } from './game/CameraController';
 import { SlimeHorde } from './game/Slimes';
 import { Multiplayer } from './network/Multiplayer';
 import { SharedHorde } from './network/SharedHorde';
+import {drawUpgradeCards} from './game/UpgradeDraft.mjs';
+import type {DraftOffer} from './game/UpgradeDraft.mjs';
 
 const viewport=document.querySelector<HTMLDivElement>('#viewport')!;
 const menu=document.querySelector<HTMLDivElement>('#menu')!;
@@ -35,6 +37,8 @@ const gameOver=document.querySelector<HTMLElement>('#game-over')!;
 const retryButton=document.querySelector<HTMLButtonElement>('#retry-button')!;
 const upgradeScreen=document.querySelector<HTMLElement>('#upgrade-screen')!;
 const upgradeCards=[...document.querySelectorAll<HTMLButtonElement>('.upgrade-card')];
+const rerollUpgrades=document.querySelector<HTMLButtonElement>('#reroll-upgrades')!;
+const rerollsRemaining=document.querySelector<HTMLElement>('#rerolls-remaining')!;
 const activeAttacks=document.querySelector<HTMLElement>('#active-attacks')!;
 const performanceOverlay=document.querySelector<HTMLElement>('#performance-overlay')!;
 const performanceText=document.querySelector<HTMLElement>('#performance-values')!;
@@ -108,7 +112,10 @@ try {
   }));
   let fpsFrames=0,fpsElapsed=0,fpsValue=0;
   retryButton.addEventListener('click',()=>window.location.reload());
-const upgradeDefinitions:Array<{id:string,name:string,icon:string,desc:string,apply:(player:Player)=>void}>=[
+type UpgradeDefinition={
+  id:string;name:string;icon:string;desc:string;maxRank?:number;apply:(player:Player)=>void;
+};
+const upgradeDefinitions:UpgradeDefinition[]=[
   {id:'damage',name:'Wzmocnione Strzały',icon:'➶',desc:'+20% obrażeń łuku',apply:p=>{p.stats.damage+=.2;}},
   {id:'speed',name:'Szybkie Dłonie',icon:'⌁',desc:'+12% szybkości ataku',apply:p=>{p.stats.attackSpeed+=.12;}},
   {id:'step',name:'Lekki Krok',icon:'➤',desc:'+10% szybkości poruszania',apply:p=>{p.stats.moveSpeed+=.1;}},
@@ -117,36 +124,66 @@ const upgradeDefinitions:Array<{id:string,name:string,icon:string,desc:string,ap
   {id:'magnet',name:'Magnetyzm',icon:'✧',desc:'+25% promienia zbierania EXP',apply:p=>{p.stats.magnet+=.25;}},
   {id:'crit',name:'Szczęśliwy Traf',icon:'✦',desc:'+8% szansy na podwójne obrażenia',apply:p=>{p.stats.criticalChance+=.08;}},
   {id:'resolve',name:'Hart Ducha',icon:'⬟',desc:'−10% otrzymywanych obrażeń',apply:p=>{p.stats.damageReduction=Math.min(.7,p.stats.damageReduction+.1);}},
-  {id:'attack-triple',name:'Potrójny Strzał',icon:'➶',desc:'Odblokuj trzy równoległe strzały z osobnym odnowieniem',apply:p=>{p.stats.tripleLevel++;}},
-  {id:'attack-poison',name:'Zatruta Strzała',icon:'☠',desc:'Strzała zatruwa cel przez kilka sekund',apply:p=>{p.stats.poisonLevel++;}},
-  {id:'attack-pierce',name:'Przebijająca Strzała',icon:'↠',desc:'Strzała przebija kolejnych przeciwników',apply:p=>{p.stats.pierceLevel++;}}
+  {id:'attack-triple',name:'Potrójny Strzał',icon:'➶',desc:'Trzy strzały z osobnym odnowieniem, szybciej na wyższej randze',apply:p=>{p.stats.tripleLevel++;}},
+  {id:'attack-poison',name:'Zatruta Strzała',icon:'☠',desc:'Zatrucie celu, mocniejsze na wyższej randze',apply:p=>{p.stats.poisonLevel++;}},
+  {id:'attack-pierce',name:'Przebijająca Strzała',icon:'↠',desc:'Przebija przeciwników, więcej celów na wyższej randze',apply:p=>{p.stats.pierceLevel++;}},
+  {id:'provision',name:'Zapas Bandaży',icon:'❖',desc:'+5 maksymalnego HP i uzdrawia 10 HP',maxRank:Infinity,
+    apply:p=>{p.stats.maxHealth+=5;p.health=Math.min(p.stats.maxHealth,p.health+10);}},
 ];
 const upgradeRanks:Record<string,number>={};
+let rerollsLeft=1;
+let draftOptions:DraftOffer[]=[];
+
+function displayDraft():void{
+  upgradeCards.forEach((button,index)=>{
+    const offer=draftOptions[index];
+    button.hidden=!offer;
+    if(!offer)return;
+    const card=upgradeDefinitions.find(item=>item.id===offer.id);
+    if(!card)return;
+    button.dataset.upgrade=offer.id;
+    button.dataset.rarity=offer.rarity;
+    button.querySelector<HTMLElement>('.card-rarity')!.textContent=offer.rarityName;
+    button.querySelector<HTMLElement>('.card-icon')!.textContent=card.icon;
+    button.querySelector<HTMLElement>('.card-name')!.textContent=card.name;
+    button.querySelector<HTMLElement>('.card-description')!.textContent=
+      card.desc+(offer.gains>1?' · efekt ×'+offer.gains:'');
+    button.querySelector<HTMLElement>('.card-rank')!.textContent=
+      'RANGA '+offer.from+' → '+offer.to;
+  });
+  rerollsRemaining.textContent=String(rerollsLeft);
+  rerollUpgrades.disabled=rerollsLeft<=0;
+}
 function openUpgradeChoice():void{
   if(!horde.consumeLevelUp())return;
   choosingUpgrade=true;
-  const available=upgradeDefinitions.filter(card=>(upgradeRanks[card.id]??0)<5 && (!card.id.startsWith('attack-') || (upgradeRanks[card.id]??0)>0 || player.stats.tripleLevel+player.stats.poisonLevel+player.stats.pierceLevel<2)).sort(()=>Math.random()-.5).slice(0,3);
-  upgradeCards.forEach((button,index)=>{
-    const card=available[index];
-    button.hidden=!card;
-    if(!card)return;
-    button.dataset.upgrade=card.id;
-    button.querySelector<HTMLElement>('.card-icon')!.textContent=card.icon;
-    button.querySelector<HTMLElement>('.card-name')!.textContent=card.name;
-    button.querySelector<HTMLElement>('.card-description')!.textContent=card.desc;
-    button.querySelector<HTMLElement>('.card-rank')!.textContent='POZIOM '+(upgradeRanks[card.id]??0)+' → '+((upgradeRanks[card.id]??0)+1);
-  });
+  draftOptions=drawUpgradeCards(upgradeDefinitions,upgradeRanks,horde.level);
+  displayDraft();
   upgradeScreen.classList.add('visible');
   if(document.pointerLockElement)document.exitPointerLock();
 }
+rerollUpgrades.addEventListener('click',()=>{
+  if(!choosingUpgrade||rerollsLeft<=0)return;
+  const previous=draftOptions.map(offer=>offer.id);
+  draftOptions=drawUpgradeCards(upgradeDefinitions,upgradeRanks,horde.level,previous);
+  rerollsLeft--;
+  displayDraft();
+});
 upgradeCards.forEach(button=>button.addEventListener('click',()=>{
-  const card=upgradeDefinitions.find(item=>item.id===button.dataset.upgrade);
+  if(!choosingUpgrade)return;
+  const offer=draftOptions.find(item=>item.id===button.dataset.upgrade);
+  if(!offer)return;
+  const card=upgradeDefinitions.find(item=>item.id===offer.id);
   if(!card)return;
-  card.apply(player);
-  upgradeRanks[card.id]=(upgradeRanks[card.id]??0)+1;
-  document.querySelector<HTMLElement>('#build-summary')!.textContent=Object.entries(upgradeRanks).filter(([,rank])=>rank>0).map(([id,rank])=>upgradeDefinitions.find(item=>item.id===id)!.name+' '+rank).join(' · ')||'Brak';
+  for(let i=0;i<offer.gains;i++)card.apply(player);
+  upgradeRanks[offer.id]=offer.to;
+  document.querySelector<HTMLElement>('#build-summary')!.textContent=
+    Object.entries(upgradeRanks).filter(([,rank])=>rank>0)
+      .map(([id,rank])=>upgradeDefinitions.find(item=>item.id===id)!.name+' '+rank).join(' · ')||'Brak';
   if(horde.pendingLevelUps>0){openUpgradeChoice();return;}
-  choosingUpgrade=false;upgradeScreen.classList.remove('visible');void input.lock();
+  choosingUpgrade=false;
+  upgradeScreen.classList.remove('visible');
+  void input.lock();
 }));
 
 
