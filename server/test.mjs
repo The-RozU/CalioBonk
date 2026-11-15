@@ -1,0 +1,85 @@
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {WebSocket} from 'ws';
+
+const processServer=spawn(process.execPath,['server/index.mjs'],{
+  env:{...process.env,HOST:'127.0.0.1',PORT:'0'},stdio:['ignore','pipe','pipe'],
+});
+let serverError='';
+processServer.stderr.on('data',chunk=>{serverError+=String(chunk);});
+const port=await new Promise((resolve,reject)=>{
+  const timer=setTimeout(()=>reject(Error('Server start timeout: '+serverError)),10000);
+  processServer.stdout.on('data',data=>{
+    const match=String(data).match(/CALIOBONK_SERVER 127\.0\.0\.1:(\d+)/);
+    if(match){clearTimeout(timer);resolve(Number(match[1]));}
+  });
+  processServer.once('exit',code=>{clearTimeout(timer);reject(Error('Server stopped: '+code+' '+serverError));});
+});
+const sockets=[];
+const open=()=>new Promise((resolve,reject)=>{
+  const ws=new WebSocket('ws://127.0.0.1:'+port);sockets.push(ws);
+  ws.once('open',()=>resolve(ws));ws.once('error',reject);
+});
+function wait(ws,type){
+  return new Promise((resolve,reject)=>{
+    const handler=data=>{
+      const message=JSON.parse(String(data));
+      if(message.type!==type)return;
+      clearTimeout(timer);ws.off('message',handler);resolve(message);
+    };
+    const timer=setTimeout(()=>{ws.off('message',handler);reject(Error('Missing message '+type));},3500);
+    ws.on('message',handler);
+  });
+}
+try{
+  const one=await open();
+  const created=wait(one,'joined');one.send(JSON.stringify({type:'create',name:'Łucznik'}));
+  const joinedOne=await created;
+  assert.match(joinedOne.room,/^[A-Z2-9]{5}$/);assert.equal(joinedOne.players.length,0);
+
+  // Initial room also receives a server-owned Slime snapshot.
+  const two=await open();
+  const joined=wait(two,'joined'), entered=wait(one,'playerJoined');
+  two.send(JSON.stringify({type:'join',room:joinedOne.room,name:'Mag'}));
+  const [joinedTwo,newPlayer]=await Promise.all([joined,entered]);
+  assert.equal(joinedTwo.room,joinedOne.room);
+  assert.equal(joinedTwo.players.length,1);assert.equal(joinedTwo.players[0].name,'Łucznik');
+  assert.equal(newPlayer.player.name,'Mag');
+
+  const moving=wait(one,'move');two.send(JSON.stringify({type:'move',x:8,y:1,z:2,yaw:1.2}));
+  const movement=await moving;assert.equal(movement.id,joinedTwo.playerId);assert.equal(movement.x,8);
+  // Both peers receive the same live enemy identities while playing.
+  const enemiesOne=wait(one,'enemies');
+  const enemiesTwo=wait(two,'enemies');
+  const announcementOne=wait(one,'waveStarted');
+  const announcementTwo=wait(two,'waveStarted');
+  const shooters=new Set();
+  one.on('message',raw=>{const packet=JSON.parse(String(raw));if(packet.type==='arrowFired')shooters.add(packet.by);});
+  const shotOne=wait(one,'arrowFired');
+  const shotTwo=wait(two,'arrowFired');
+  const hitOne=wait(one,'enemyHit');
+  const hitTwo=wait(two,'enemyHit');
+  one.send(JSON.stringify({type:'ready',ready:true}));
+  two.send(JSON.stringify({type:'ready',ready:true}));
+  const [waveA,waveB,noticeA,noticeB,arrowA,arrowB,impactA,impactB]=await Promise.all([
+    enemiesOne,enemiesTwo,announcementOne,announcementTwo,shotOne,shotTwo,hitOne,hitTwo,
+  ]);
+  assert.equal(waveA.wave,1);
+  assert.deepEqual(waveA.enemies.map(e=>e.id),waveB.enemies.map(e=>e.id));
+  assert.ok(waveA.enemies.length>=17,'initial wave is a whole group');
+  assert.deepEqual(noticeA,noticeB,'both players see the same wave');
+  assert.equal(noticeA.spawned,18);
+  assert.deepEqual(arrowA,arrowB,'both players see the same arrow event');
+  assert.ok(waveA.enemies.some(e=>e.id===arrowA.targetId),'arrow targets a known shared enemy');
+  assert.ok(waveA.enemies.some(e=>e.id===impactA.id),'server hit belongs to the shared horde');
+  await new Promise(resolve=>setTimeout(resolve,1100));
+  assert.ok(shooters.has(joinedOne.playerId),'first player shoots');
+  assert.ok(shooters.has(joinedTwo.playerId),'second player shoots');
+  assert.deepEqual(impactA,impactB,'same impact for both players');
+  const leaving=wait(one,'playerLeft');two.close();
+  assert.equal((await leaving).id,joinedTwo.playerId);
+  console.log('OK: lobby, movement, shared Slime wave, arrows, impacts and disconnect');
+}finally{
+  for(const ws of sockets)ws.terminate();
+  processServer.kill('SIGTERM');
+}

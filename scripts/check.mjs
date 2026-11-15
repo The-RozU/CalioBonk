@@ -1,0 +1,137 @@
+import { readFileSync, existsSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import assert from 'node:assert/strict';
+
+const root=join(dirname(fileURLToPath(import.meta.url)),'..');
+const read=(name)=>readFileSync(join(root,name),'utf8');
+const required=[
+  'index.html','src/main.ts','src/style.css','src/game/CameraController.ts',
+  'src/game/Input.ts','src/game/Player.ts','src/game/Terrain.ts','src/game/World.ts',
+  'src/game/Slimes.ts','src/game/SummoningLight.ts','src/game/SoloSurvival.mjs','src/game/SoloSurvival.d.mts',
+  'src/game/UpgradeDraft.mjs','src/game/UpgradeDraft.d.mts','scripts/test-upgrades.mjs',
+  'src/game/SlimeVariants.mjs','src/game/SlimeVariants.d.mts','scripts/test-variants.mjs','src/network/Multiplayer.ts','src/network/SharedHorde.ts',
+  'server/index.mjs','server/test.mjs','server/horde.mjs','server/horde.test.mjs','scripts/test-solo.mjs',
+  'public/assets/textures/ground.webp','public/assets/textures/stone.webp',
+  'public/assets/textures/noise.webp','.github/workflows/pages.yml',
+];
+for(const path of required) assert(existsSync(join(root,path)),`Brakuje pliku: ${path}`);
+const pkg=JSON.parse(read('package.json'));
+assert.equal(pkg.version,'0.0.29','Nieprawidłowa wersja gry');
+assert.match(read('src/game/Input.ts'),/requestPointerLock/);
+assert.match(read('src/game/Player.ts'),/ShiftLeft/);
+assert.match(read('src/game/Player.ts'),/dashCooldown/);
+assert.match(read('src/game/Input.ts'),/consumePress/);
+assert.match(read('src/game/CameraController.ts'),/this.camera.position.copy\(this.desired\)/);
+assert.match(read('src/game/CameraController.ts'),/addEventListener\('wheel'/);
+assert.match(read('src/game/CameraController.ts'),/this.distance=THREE.MathUtils.clamp/);
+assert.match(read('src/game/CameraController.ts'),/3\.2,14/);
+assert.match(read('src/game/Player.ts'),/this.leftArm.rotation.x=\.68\+draw\*\.38/);
+assert.match(read('src/game/Player.ts'),/this.rightArm.rotation.z=-draw\*\.28/);
+assert.match(read('src/game/Player.ts'),/this.rightForearm.rotation.z=-\.25-draw\*1\.45/);
+assert.match(read('src/game/Player.ts'),/this.drawArrow.visible=progress<\.58/);
+assert.match(read('src/game/Player.ts'),/bow grip is centered exactly on the left hand/);
+assert.match(read('src/game/Player.ts'),/this.bow.rotation.x=-this.leftArm.rotation.x/);
+assert.match(read('src/game/Player.ts'),/full hood encloses the skull/);
+assert.match(read('index.html'),/ALFA v0\.0\.29/);
+assert.match(read('src/game/Player.ts'),/bow grip is centered exactly on the left hand/);
+assert.match(read('src/game/Player.ts'),/this.bow.position.set\(-\.015,-\.73,-\.055-draw\*\.075\)/);
+assert.match(read('src/game/Player.ts'),/this.bow.rotation.x=-this.leftArm.rotation.x/);
+assert.match(read('src/game/Player.ts'),/CubicBezierCurve3/);
+assert.match(read('src/game/Slimes.ts'),/aimPosition.clone\(\).sub\(origin\)/);
+assert.match(read('src/game/Slimes.ts'),/origin.distanceTo\(aimPosition\)/);
+assert.match(read('src/game/Player.ts'),/Space/);
+assert.match(read('src/game/Player.ts'),/startAttack/);
+assert.match(read('src/game/Slimes.ts'),/class Slime/);
+assert.match(read('src/game/Slimes.ts'),/takeHit/);
+assert.match(read('src/game/Slimes.ts'),/ARROW_DAMAGE/);
+assert.match(read('src/game/Slimes.ts'),/dropExperience/);
+assert.match(read('src/game/Slimes.ts'),/pendingLevelUps/);
+assert.match(read('src/game/Slimes.ts'),/type AttackKind/);
+assert.match(read('src/game/Slimes.ts'),/new THREE.SphereGeometry\(\.66,8,6\)/);
+assert.match(read('src/game/Slimes.ts'),/CanvasTexture/);
+assert.match(read('src/game/Slimes.ts'),/setTestLimit/);
+assert.match(read('src/game/Slimes.ts'),/scheduleBatch/);
+assert.match(read('src/game/Slimes.ts'),/updateSummons/);
+assert.match(read('src/game/Slimes.ts'),/const chasing=distance>\.95/);
+assert.match(read('src/game/Slimes.ts'),/SOLO_ATTACK_RANGE/);
+assert.match(read('src/game/Player.ts'),/SOLO_ATTACK_RANGE/);
+assert.match(read('src/game/SummoningLight.ts'),/class SummoningLight/);
+assert.match(read('src/game/SummoningLight.ts'),/AdditiveBlending/);
+assert.match(read('index.html'),/hud-group-left/);
+assert.match(read('index.html'),/hud-group-right/);
+assert.match(read('src/main.ts'),/nextBatchIn/);
+assert.doesNotMatch(read('src/main.ts'),/horde\.wave/);
+assert.match(read('src/game/Slimes.ts'),/separateSlimes/);
+assert.match(read('src/game/Slimes.ts'),/slimeVariantForWave/);
+assert.match(read('src/game/Slimes.ts'),/leaveToxicPool/);
+assert.match(read('src/game/Slimes.ts'),/updateToxicPools/);
+assert.match(read('src/game/SlimeVariants.mjs'),/SLIME_TRAITS/);
+assert.match(read('src/game/Slimes.ts'),/slimeSeparation/);
+assert.match(read('src/game/SoloSurvival.mjs'),/soloBatchSize/);
+assert.match(read('src/main.ts'),/horde\.runTime/);
+assert.match(read('index.html'),/id="run-timer"/);
+assert.match(read('index.html'),/id="run-result"/);
+assert.match(read('src/game/Slimes.ts'),/maxDamageNumbers=24/);
+assert.match(read('src/game/Slimes.ts'),/arrowPool/);
+assert.match(read('src/game/World.ts'),/collisionGrid/);
+assert.match(read('index.html'),/data-horde-limit/);
+assert.match(read('src/game/Slimes.ts'),/SLIME_RENDER_MODE/);
+assert.match(read('src/game/Slimes.ts'),/new URLSearchParams\(location.search\)/);
+assert.match(read('src/game/Slimes.ts'),/projectileCount/);
+assert.match(read('src/game/Slimes.ts'),/crystalCount/);
+assert.match(read('src/main.ts'),/renderer.info.render.calls/);
+assert.match(read('index.html'),/performance-overlay/);
+assert.match(read('src/game/Slimes.ts'),/applyPoison/);
+assert.match(read('src/game/Slimes.ts'),/showDamage/);
+assert.match(read('src/main.ts'),/attack-triple/);
+assert.match(read('src/main.ts'),/activeAttacks/);
+assert.match(read('src/game/Player.ts'),/tripleLevel:0/);
+assert.match(read('src/game/Player.ts'),/readonly stats=/);
+assert.match(read('src/main.ts'),/openUpgradeChoice/);
+assert.match(read('src/main.ts'),/drawUpgradeCards/);
+assert.match(read('src/main.ts'),/rerollsLeft=1/);
+assert.match(read('src/game/UpgradeDraft.mjs'),/rollRarity/);
+assert.match(read('src/game/UpgradeDraft.mjs'),/ownedAttacks/);
+assert.match(read('index.html'),/id="reroll-upgrades"/);
+assert.match(read('index.html'),/card-rarity/);
+assert.match(read('index.html'),/upgrade-screen/);
+assert.match(read('src/game/Slimes.ts'),/type AttackKind/);
+assert.match(read('src/game/Slimes.ts'),/applyPoison/);
+assert.match(read('src/game/Slimes.ts'),/showDamage/);
+assert.match(read('src/main.ts'),/attack-triple/);
+assert.match(read('src/main.ts'),/activeAttacks/);
+assert.match(read('src/game/Slimes.ts'),/gainExperience/);
+assert.match(read('src/game/Slimes.ts'),/Gwiazda Esencji/);
+assert.match(read('src/game/Slimes.ts'),/essenceStarPool/);
+assert.match(read('src/game/Slimes.ts'),/essenceStarMaterial/);
+assert.match(read('src/game/Slimes.ts'),/experienceRequired=15\*this.level/);
+assert.match(read('src/main.ts'),/hero-exp-fill/);
+assert.match(read('index.html'),/level-up/);
+assert.match(read('src/game/Slimes.ts'),/makeArrow/);
+assert.match(read('src/game/Slimes.ts'),/CONTACT_DAMAGE/);
+assert.match(read('src/game/Player.ts'),/takeDamage/);
+assert.match(read('src/game/Player.ts'),/health = 100/);
+assert.match(read('index.html'),/hero-health-fill/);
+assert.match(read('index.html'),/retry-button/);
+assert.match(read('src/main.ts'),/horde.update/);
+assert.match(read('src/main.ts'),/multiplayer.update/);
+assert.match(read('src/network/SharedHorde.ts'),/class SharedHorde/);
+assert.match(read('server/horde.mjs'),/enemyKilled/);
+assert.match(read('server/horde.mjs'),/waveStarted/);
+assert.match(read('server/horde.mjs'),/arrowFired/);
+assert.match(read('src/network/SharedHorde.ts'),/shoot\(data:SharedArrow\)/);
+assert.match(read('index.html'),/wave-hud/);
+assert.match(read('server/index.mjs'),/stepHorde/);
+assert.match(read('src/network/Multiplayer.ts'),/class Multiplayer/);
+assert.match(read('server/index.mjs'),/playerJoined/);
+assert.match(read('index.html'),/mp-create/);
+assert.match(read('index.html'),/mp-join/);
+assert.match(read('.github/workflows/pages.yml'),/branches: \[dev-mode\]/);
+const html=read('index.html');
+assert.ok(html.includes(`ALFA v${pkg.version}`),'Wersja w HUD nie zgadza się z package.json');
+const code=read('src/main.ts');
+for(const match of code.matchAll(/querySelector<[^>]+>\('#([^']+)'\)/g)) {
+  assert(html.includes(`id="${match[1]}"`),`Brakuje elementu HTML #${match[1]}`);
+}
+console.log(`OK: ${required.length} plików, interfejs, sterowanie, v${pkg.version}, GitHub Pages/dev-mode`);

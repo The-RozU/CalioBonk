@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b100e" />
+    <meta name="description" content="CalioBonk. Prototyp mrocznej gry survival 3D w świecie Calionu." />
+    <title>CalioBonk | v0.0.29</title>
+  </head>
+  <body>
+    <div id="app">
+      <div id="viewport" aria-label="Trójwymiarowy świat Calionu"></div>
+      <div class="vignette" aria-hidden="true"></div>
+      <div class="grain" aria-hidden="true"></div>
+
+      <header class="hud-top">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">C</div>
+          <div class="brand-copy"><strong>CALIO<span>BONK</span></strong><small>POGRANICZE · POLIGON BOHATERA</small></div>
+        </div>
+        <div class="hud-right">
+          <span class="stage-label"><span class="live-dot"></span> PROTOTYP 3D</span>
+          <span id="run-timer" class="run-timer" hidden>CZAS 00:00</span>
+          <span id="wave-hud" class="wave-hud" hidden>FALA: OCZEKIWANIE</span>
+          <span id="mp-indicator" class="mp-indicator" hidden>POKÓJ · 1/4</span>
+          <span class="version">ALFA v0.0.29</span>
+        </div>
+      </header>
+
+      <aside class="hud-group hud-group-left" aria-label="Walka i życie">
+        <div class="combat-hud" aria-label="Statystyki walki">
+        <span class="combat-emblem">⚔</span>
+        <div class="combat-details"><small>POLIGON WALKI · SLIME</small><strong>Pokonane: <span id="slime-kills">0</span></strong><small>W pobliżu: <span id="slime-alive">0</span> · ATAK AUTOMATYCZNY</small></div>
+      </div>
+        <section class="hero-health" aria-label="Zdrowie bohatera"><div class="hero-health-heading"><span>ŻYCIE ŁUCZNIKA</span><strong id="hero-health">100 / 100</strong></div><div class="hero-health-track"><div id="hero-health-fill"></div></div></section>
+      </aside>
+      <aside class="hud-group hud-group-right" aria-label="Cel i doświadczenie">
+        <div class="goal" id="goal" aria-live="polite">
+        <div class="goal-icon">✦</div>
+        <div class="goal-copy"><small>CEL EKSPLORACJI</small><strong>Odnajdź starą bramę</strong><span id="goal-distance">Podążaj ku ruinom</span></div>
+      </div>
+        <section class="experience-hud" aria-label="Poziom i doświadczenie"><div><strong id="hero-level">POZIOM 1</strong><span id="hero-exp">0 / 15 EXP</span></div><div class="experience-track"><i id="hero-exp-fill"></i></div></section>
+      </aside>
+      <div id="damage-flash" class="damage-flash" aria-hidden="true"></div>
+      <div id="game-over" class="game-over" role="dialog" aria-modal="true"><div><small>WYPRAWA ZAKOŃCZONA</small><h2>Bohater poległ</h2><p>Slime’y przejęły pogranicze. Zbierz siły i spróbuj ponownie.</p><p id="run-result" class="run-result" hidden></p><button id="retry-button" type="button">ROZPOCZNIJ PONOWNIE</button></div></div>
+
+      <div id="level-up" class="level-up" role="status">AWANSOWANO · NOWY POZIOM</div>
+      <div id="wave-banner" class="wave-banner" role="status" aria-live="polite"></div>
+      <div id="active-attacks" class="active-attacks" aria-label="Aktywne ataki">🏹 Łuk</div>
+      <div id="upgrade-screen" class="upgrade-screen" role="dialog" aria-modal="true" aria-label="Wybór ulepszenia">
+        <div class="upgrade-panel">
+          <small>AWANS · WYBIERZ JEDNO ULEPSZENIE</small>
+          <h2>Rozwiń swój styl walki</h2>
+          <div class="upgrade-options">
+            <button class="upgrade-card" type="button">
+              <span class="card-rarity">ZWYKŁA</span>
+              <span class="card-icon"></span>
+              <strong class="card-name"></strong>
+              <span class="card-description"></span>
+              <small class="card-rank"></small>
+            </button>
+            <button class="upgrade-card" type="button">
+              <span class="card-rarity">ZWYKŁA</span>
+              <span class="card-icon"></span>
+              <strong class="card-name"></strong>
+              <span class="card-description"></span>
+              <small class="card-rank"></small>
+            </button>
+            <button class="upgrade-card" type="button">
+              <span class="card-rarity">ZWYKŁA</span>
+              <span class="card-icon"></span>
+              <strong class="card-name"></strong>
+              <span class="card-description"></span>
+              <small class="card-rank"></small>
+            </button>
+          </div>
+          <div class="draft-controls">
+            <button type="button" id="reroll-upgrades">⟳ PRZELOSUJ KARTY</button>
+            <span>Przelosowania w tej wyprawie: <strong id="rerolls-remaining">1</strong></span>
+          </div>
+          <p>Posiadane ulepszenia: <span id="build-summary">Brak</span></p>
+        </div>
+      </div>
+      <aside id="performance-overlay" class="performance-overlay" hidden><span>DIAGNOSTYKA HORDY</span><strong id="performance-values">FPS 0</strong><div class="horde-controls">Horda: <button data-horde-limit="25">25</button><button data-horde-limit="50">50</button><button data-horde-limit="100">100</button><button data-horde-limit="200">200</button><button data-horde-limit="300">300</button></div></aside>
+      <div id="reticle" class="reticle" aria-hidden="true"><span></span></div>
+
+      <div class="hud-bottom">
+        <section class="status-panel">
+          <span class="status-rune">◈</span>
+          <div class="status-details"><small>ODKRYWCA POGRANICZA</small><strong id="movement-state">Gotowy do wyprawy</strong><small id="dash-status">Doskok · gotowy</small><div class="velocity"><div id="velocity-fill"></div></div></div>
+        </section>
+        <nav class="key-hints" aria-label="Sterowanie">
+          <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Ruch</span></div>
+          <div><kbd>SHIFT</kbd><span>Doskok</span></div>
+          <div><kbd>SPACJA</kbd><span>Skok</span></div>
+          <div><span class="mouse-glyph">◉</span><span>Kamera</span></div>
+          <div><kbd>ESC</kbd><span>Pauza</span></div>
+        </nav>
+      </div>
+
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+      <div id="menu" class="menu-scrim" role="dialog" aria-modal="true" aria-labelledby="menu-title">
+        <div class="menu-panel">
+          <div class="crest" aria-hidden="true"><div class="crest-inner">C</div></div>
+          <p class="eyebrow">PIERWSZA WYPRAWA · PROTOTYP v0.0.29</p>
+          <h1 id="menu-title">CALIO<span>BONK</span></h1>
+          <div class="title-divider"><span></span>✦<span></span></div>
+          <p id="menu-desc" class="menu-desc">Na krańcu Calionu stoją zapomniane ruiny. Pokonuj skaczące Slime’y automatycznymi strzałami i odkryj starą bramę.</p>
+          <button id="start-button" class="start-button" type="button"><span id="start-label">ROZPOCZNIJ EKSPLORACJĘ</span><span aria-hidden="true">➜</span></button>
+          <button id="multiplayer-toggle" class="multiplayer-toggle" type="button">⚔ GRA ZE ZNAJOMYMI · ALFA</button>
+          <div id="multiplayer-panel" class="multiplayer-panel" hidden>
+            <p>Wspólne fale Slime’ów, widoczne strzały obu graczy i serwerowe obrażenia. Tryb testowy online, specjalne ataki są jeszcze w przygotowaniu.</p>
+            <div class="multiplayer-fields">
+              <label for="mp-name">NICK <input id="mp-name" type="text" maxlength="18" value="Odkrywca" autocomplete="off" /></label>
+              <label for="mp-code">KOD POKOJU <input id="mp-code" type="text" maxlength="5" placeholder="ABCDE" autocomplete="off" /></label>
+            </div>
+            <div class="multiplayer-actions">
+              <button id="mp-create" type="button">UTWÓRZ POKÓJ</button>
+              <button id="mp-join" type="button">DOŁĄCZ</button>
+            </div>
+            <p id="mp-status" class="multiplayer-status" aria-live="polite">Uruchom lokalny serwer: npm run dev:server.</p>
+            <strong id="mp-room" class="multiplayer-room"></strong>
+            <div class="multiplayer-actions">
+              <button id="mp-play" type="button" disabled>WEJDŹ DO WYPRAWY</button>
+              <button id="mp-leave" type="button" hidden>OPUŚĆ POKÓJ</button>
+            </div>
+          </div>
+          <div class="menu-controls"><span>WASD · PORUSZANIE</span><i></i><span>MYSZ · KAMERA</span><i></i><span>SHIFT · DOSKOK</span><i></i><span>SPACJA · SKOK</span></div>
+          <p class="menu-tip" id="menu-tip">Po rozpoczęciu kliknij Esc, aby zatrzymać grę i uwolnić kursor.</p>
+        </div>
+        <div class="menu-footer"><span>CALION UNIVERSE</span><span>THREE.JS / TYPESCRIPT</span></div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
